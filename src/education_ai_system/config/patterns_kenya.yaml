@@ -1,0 +1,57 @@
+grade_patterns:
+  - 'class\s*(\d+)'
+  - 'form\s*(\d+)'
+  - 'standard\s*(\d+)'
+  - 'grade\s*(\d+)'
+
+grade_levels:
+  class: [1, 2, 3, 4, 5, 6, 7, 8]
+  form: [1, 2, 3, 4]
+
+# Add LLM context to YAML
+llm_context:
+  grade_examples: ["class 4", "form 2", "class 4-6"]
+  range_examples: ["Class 4-6", "Form 1-3"]
+  sample_topics: ["numbers", "algebra", "geometry"]
+
+inference_keywords:
+  class: ['class', 'primary', 'standard']
+  form: ['form', 'secondary', 'high school']
+
+number_ranges:
+  class: [1, 2, 3, 4, 5, 6, 7, 8]
+  form: [1, 2, 3, 4]
+
+subjects:
+  - mathematics
+  - english
+  - kiswahili
+  - science
+  - social_studies
+  - life_skills
+
+# Kenyan exam patterns
+exam_patterns:
+  quiz:
+    weeks_covered: [1, 2]
+    duration: "40 minutes"
+    total_marks: 30
+    description: "Continuous Assessment Test (CAT)"
+  
+  mid_term:
+    weeks_covered: [1, 2, 3, 4, 5, 6]
+    duration: "1.5 hours"
+    total_marks: 70
+    description: "Mid-Term Examination"
+  
+  end_of_term:
+    weeks_covered: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    duration: "2.5 hours"
+    total_marks: 100
+    description: "End of Term Examination"
+  
+  final_exam:
+    weeks_covered: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36]
+    duration: "3 hours"
+    total_marks: 100
+    description: "Kenya Certificate of Primary Education (KCPE) / Kenya Certificate of Secondary Education (KCSE)"

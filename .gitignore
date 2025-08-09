@@ -1,0 +1,84 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Virtual environment folders created by Poetry or manually
+.env/
+venv/
+env/
+temp_docs/
+venv/
+ENV/
+env.bak/
+venv.bak/
+data/
+
+# Poetry-specific files
+poetry.lock
+*.dist-info/
+*.egg-info/
+
+# Logs and databases
+*.log
+*.sqlite3
+logs/
+
+# Cache
+.cache/
+*.pytest_cache/
+*.coverage
+
+# Unit test / coverage reports
+.coverage
+*.cover
+nosetests.xml
+coverage.xml
+
+# Secret files and environment variables
+*.key
+*.pem
+
+# IDE files
+.idea/
+.vscode/
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary files and backups
+*.swp
+*.bak
+*.tmp
+
+# Build directories (if building distributions)
+build/
+dist/
+
+# Generated docx and other output files
+genai_output/
+logs/
+data/
+*.txt
+
+
+# Python wheels
+*.whl
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Tool-specific temporary files
+.mypy_cache/
+cython_debug/
+
+# .gitignore
+.env
+logs/
+data/
+.env
+.temp_docs/

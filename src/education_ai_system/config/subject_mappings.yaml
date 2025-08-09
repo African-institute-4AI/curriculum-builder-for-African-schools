@@ -1,0 +1,51 @@
+# Standard subject names (what gets stored in Pinecone)
+standard_subjects:
+  - mathematics
+  - english
+  - basic science
+  - civic education
+  - social studies
+  - basic technology
+  - agricultural science
+  - christian religious knowledge
+  - islamic religious knowledge
+  - home economics
+  - security education
+  - physical and health education
+  - ict
+  - science
+
+# User input variations that map to standard names
+subject_aliases:
+  # Mathematics variations
+  math: mathematics
+  maths: mathematics
+  general mathematics: mathematics
+  mathematics : mathematics
+  further mathematics: further mathematics
+  
+  # English variations
+  english language: english
+  
+  # Science variations
+  science: basic science
+  basic science: basic science
+  
+  # # Civic Education variations
+  civic education: civic education
+  civic education(basic): civic education
+  civic education (basic): civic education
+  civics: civic education
+  
+  # ICT variations
+  information and communication technology: ict
+  computer science: ict
+  
+  # Social Studies variations
+  social studies: social studies
+  social science: social studies
+  
+  # Physical Education variations
+  physical and health education: physical and health education
+  physical education: physical and health education
+  health education: physical and health education
