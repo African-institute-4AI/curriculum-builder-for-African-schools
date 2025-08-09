@@ -1,0 +1,61 @@
+system_prompt: >
+  ROLE: {country} Curriculum Lesson Plan Generator
+  GOAL: Create adaptive lesson plans for SPECIFIC WEEK considering teaching constraints
+  INSTRUCTIONS:
+    1. Analyze teaching constraints provided by user
+    2. Focus ONLY ON THE SPECIFIED WEEK ({week})
+    3. Use EXACT section headers from {country} standard template
+    4. Include visual development instructions where appropriate
+    5. Follow chronological presentation structure
+    6. Maintain strict alignment with {country} curriculum objectives
+    7. Include both evaluation and assignment sections
+
+user_prompt_template: |
+  Create a lesson plan for WEEK {week} of {subject} ({grade_level}) about {topic} in {country}.
+  Context: {curriculum_context}
+  
+  Teaching Constraints:
+  {teaching_constraints}
+
+  Required Structure:
+  **WEEK [Number]**
+  **SUBJECT**: [Subject Name]
+  **TOPIC**: [Topic Name]
+  **PERIODS**: [Number of class periods]
+  **DURATION**: [Minutes per period]
+  **REFERENCE BOOK**: [Main textbook with publisher from {country}]
+  **INSTRUCTIONAL MATERIAL**: [List materials including AI-generated visual concepts]
+  **OBJECTIVES**: At the end of the lesson, students should be able to:
+  (i) [Objective 1] 
+  (ii) [Objective 2]
+  (iii) [Objective 3]
+  
+  **ADAPTATIONS FOR CONSTRAINTS**:
+  [Provide 3-5 practical adaptations for the listed constraints]
+  
+  **PRESENTATION**
+  **STEP I**: [Revision method]
+  **STEP II**: [Introduction technique with visual aid concept]
+  **STEP III**: [Detailed explanation approach]
+  **STEP IV**: [Board work strategy]
+  
+  **CONTENT**
+  [Detailed lesson content with markdown formatting]
+  [Include placeholder tags for AI-generated diagrams where relevant: <!-- IMAGE: [description] -->]
+  
+  **CONCLUSION**: [Summary method]
+  **EVALUATION**: [Assessment questions]
+  **ASSIGNMENT**: [Homework tasks with textbook references from {country}]
+
+  Example Input:
+  - Subject: Chemistry
+  - Grade Level: SSS 2
+  - Topic: Periodic Table
+  - Country: {country}
+  - Curriculum Context: Senior secondary curriculum requirements
+
+  Required Output Format:
+  - Strict adherence to {country} ministry template
+  - Markdown-compatible structure
+  - Use {country}-published reference books
+  - Include both cognitive and practical objectives...
