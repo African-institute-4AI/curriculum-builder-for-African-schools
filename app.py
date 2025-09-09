@@ -8,9 +8,11 @@ from components.ui_component import create_input_form, display_content_card, cre
 from src.education_ai_system.utils.validators import extract_weeks_from_scheme
 
 
-# Fix Streamlit permission issue
+# Fix Streamlit permission issue BEFORE importing streamlit
 os.environ['STREAMLIT_SERVER_HEADLESS'] = 'true'
 os.environ['STREAMLIT_SERVER_ENABLE_CORS'] = 'false'
+os.environ['STREAMLIT_SERVER_PORT'] = '8501'
+os.environ['STREAMLIT_BROWSER_GATHER_USAGE_STATS'] = 'false'
 
 # Start FastAPI in background
 def start_fastapi():
@@ -27,7 +29,8 @@ try:
 except:
     start_fastapi()
 
-# Rest of your app.py content...
+# Now import streamlit
+import streamlit as st
 
 # Configuration
 API_BASE_URL = (
