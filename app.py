@@ -7,6 +7,11 @@ from components.content_generators import ContentGenerator
 from components.ui_component import create_input_form, display_content_card, create_test_examples
 from src.education_ai_system.utils.validators import extract_weeks_from_scheme
 
+
+# Fix Streamlit permission issue
+os.environ['STREAMLIT_SERVER_HEADLESS'] = 'true'
+os.environ['STREAMLIT_SERVER_ENABLE_CORS'] = 'false'
+
 # Start FastAPI in background
 def start_fastapi():
     subprocess.Popen([
@@ -21,6 +26,8 @@ try:
     requests.get("http://localhost:8001/", timeout=2)
 except:
     start_fastapi()
+
+# Rest of your app.py content...
 
 # Configuration
 API_BASE_URL = (
