@@ -14,12 +14,14 @@ def main():
     # Initialize session state
     if 'content' not in st.session_state:
         st.session_state.content = {}
+    if 'evaluations' not in st.session_state:  # ADD THIS LINE
+        st.session_state.evaluations = {}
     
     # Initialize content generator
     generator = ContentGenerator(API_BASE_URL)
     
-    # Create tabs
-    tab1, tab2, tab3 = st.tabs(["📄 Upload Document", "📚 Content Generation", "🧪 Test Search"])
+    # Create tabs - CHANGE THIS LINE
+    tab1, tab2, tab3, tab4 = st.tabs(["📄 Upload Document", "�� Content Generation", "🔍 Evaluation & Improvement", "🧪 Test Search"])
     
     with tab1:
         upload_document_tab()
@@ -27,7 +29,10 @@ def main():
     with tab2:
         content_generation_tab(generator)
     
-    with tab3:
+    with tab3:  # NEW TAB
+        evaluation_tab()
+    
+    with tab4:  # RENUMBERED
         test_search_tab()
 
 def upload_document_tab():
@@ -361,8 +366,6 @@ def generate_lesson_notes_ui(generator):
     col1, col2 = st.columns(2)
     
     with col1:
-        week = lesson_plan.get('week', '1')
-        st.info(f"**Week:** {week}")
         limitations = st.text_area("Teaching Constraints", 
                                  "Limited resources, 40 students, no projector")
     
@@ -371,7 +374,7 @@ def generate_lesson_notes_ui(generator):
         st.info(f"**Using Lesson Plan:** `{lesson_plan['id'][:8]}...`")
     
     if st.button("📝 Generate Lesson Notes"):
-        result = generator.generate_lesson_notes(scheme['id'], lesson_plan['id'], int(week), limitations)
+        result = generator.generate_lesson_notes(scheme['id'], lesson_plan['id'],  limitations)
         
         if result:
             st.session_state.content['lesson_notes'] = {
@@ -381,70 +384,50 @@ def generate_lesson_notes_ui(generator):
             st.success("✅ Lesson Notes generated successfully!")
             st.rerun()
 
-# def generate_exam_ui(generator):
-#     """UI for generating exam - minimal constraints"""
-#     scheme = st.session_state.content['scheme']
-#     lesson_plan = st.session_state.content['lesson_plan']
-#     lesson_notes = st.session_state.content['lesson_notes']
-    
-#     col1, col2 = st.columns(2)
-    
-#     with col1:
-#         exam_duration = st.selectbox("Exam Duration", ["1 hour", "2 hours", "3 hours"], index=1, key="exam_duration")
-#         total_marks = st.number_input("Total Marks", min_value=50, max_value=200, value=100, key="exam_marks")
-#         week = lesson_plan.get('week', '1')
-#         st.info(f"**Week:** {week}")
-    
-#     with col2:
-#         st.info(f"**Using Scheme:** `{scheme['id'][:8]}...`")
-#         st.info(f"**Using Lesson Plan:** `{lesson_plan['id'][:8]}...`")
-#         st.info(f"**Using Lesson Notes:** `{lesson_notes['id'][:8]}...`")
-    
-#     if st.button("📝 Generate Exam", key="gen_exam"):
-#         result = generator.generate_exam(
-#             scheme['id'], 
-#             lesson_plan['id'], 
-#             lesson_notes['id'],
-#             int(week),
-#             exam_duration,
-#             total_marks
-#         )
-        
-#         if result:
-#             st.session_state.content['exam'] = {
-#                 'id': result['exam_id'],
-#                 'content': result['content'],
-#                 'week': week
-#             }
-#             st.success("✅ Exam generated successfully!")
-#             st.rerun()
+
 
 def generate_exam_ui(generator):
     """UI for generating exam - new simplified approach"""
     scheme = st.session_state.content['scheme']
     
+    #determine available weeks from the scheme
+    available_weeks = extract_weeks_from_scheme(scheme['content'])
+    if not available_weeks:
+        available_weeks = ["1", "2", "3", "4"]
+
+    
+
     col1, col2 = st.columns(2)
     
     with col1:
-        exam_type = st.selectbox(
-            "Exam Type", 
-            ["quiz", "mid_term", "end_of_term", "final_exam"], 
-            index=0,
-            help="Quiz: weeks 1-2, Mid-term: weeks 1-7, End-term: weeks 1-13, Final: weeks 1-37"
+        selected_weeks = st.multiselect(
+            "select weeks to Include",
+            options = available_weeks,
+            default = available_weeks[:2] if len(available_weeks) >= 2 else available_weeks
         )
     
     with col2:
         st.info(f"**Using Scheme:** `{scheme['id'][:8]}...`")
-        st.info("**Note:** Exam will use ALL available lesson plans and notes")
+        st.info("**Note:** Exam will use ONLY lesson plans and notes for the selected weeks")
     
     if st.button("📝 Generate Exam", key="gen_exam"):
-        result = generator.generate_exam(scheme['id'], exam_type)
+        if not selected_weeks:
+            st.error("Please select at least one week")
+            return
         
+
+        try:
+            weeks_int = [int(w) for w in selected_weeks]
+
+        except Exception:
+            st.error("Weeks must be number (e.g., 1, 2, 3)")
+            return 
+        result =  generator.generate_exam(scheme['id'], weeks_int)
+
         if result:
             st.session_state.content['exam'] = {
                 'id': result['exam_id'],
                 'content': result['content'],
-                'exam_type': exam_type,
                 'weeks_covered': result.get('weeks_covered', [])
             }
             st.success("✅ Exam generated successfully!")
@@ -515,6 +498,322 @@ def test_search_functionality(subject: str, grade_level: str, topic: str):
             
     except Exception as e:
         st.error(f"🚨 **CONNECTION ERROR:** {str(e)}")
+
+
+
+def evaluation_tab():
+    """New tab for content evaluation and improvement"""
+    st.header(" Content Evaluation & Improvement")
+    st.markdown("**Evaluate your generated content and get AI-powered improvements**")
+    
+    # Content selection
+    st.subheader("📋 Select Content to Evaluate")
+    
+    # Get available content from session state
+    available_content = []
+    if 'scheme' in st.session_state.content:
+        # FIX: Use context_id instead of scheme_id for scheme evaluation
+        available_content.append(("scheme_of_work", "Scheme of Work", st.session_state.content['scheme']['context_id']))
+    if 'lesson_plan' in st.session_state.content:
+        available_content.append(("lesson_plan", "Lesson Plan", st.session_state.content['lesson_plan']['id']))
+    if 'lesson_notes' in st.session_state.content:
+        available_content.append(("lesson_notes", "Lesson Notes", st.session_state.content['lesson_notes']['id']))
+    if 'exam' in st.session_state.content:
+        available_content.append(("exam_generator", "Exam", st.session_state.content['exam']['id']))
+    
+    if not available_content:
+        st.warning("⚠️ No content available for evaluation. Generate some content first!")
+        return
+    
+    # Content selection dropdown
+    content_options = [f"{name} ({content_id[:8]}...)" for content_type, name, content_id in available_content]
+    selected_idx = st.selectbox("Choose content to evaluate:", range(len(content_options)), 
+                               format_func=lambda x: content_options[x])
+    
+    selected_content_type, selected_name, selected_id = available_content[selected_idx]
+    
+    # Evaluation controls with better feedback
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        if st.button(" Evaluate Content", type="primary"):
+            with st.spinner("Evaluating content..."):
+                evaluate_content(selected_content_type, selected_id)
+            st.rerun()  # Force refresh to show results
+    
+    with col2:
+        if st.button("🔄 Re-evaluate"):
+            eval_key = f"{selected_content_type}_{selected_id}"
+            if eval_key in st.session_state.evaluations:
+                del st.session_state.evaluations[eval_key]
+                st.info("🔄 Previous evaluation cleared. Running new evaluation...")
+            
+            with st.spinner("Re-evaluating content..."):
+                evaluate_content(selected_content_type, selected_id)
+            st.rerun()  # Force refresh to show results
+    
+    with col3:
+        if st.button("📊 View All Evaluations"):
+            show_all_evaluations()
+    
+    # Display evaluation results
+    eval_key = f"{selected_content_type}_{selected_id}"
+    if eval_key in st.session_state.evaluations:
+        display_evaluation_results(st.session_state.evaluations[eval_key], selected_name)
+    else:
+        st.info("💡 Click 'Evaluate Content' to see evaluation results")
+
+def evaluate_content(content_type: str, content_id: str):
+    """Evaluate content using the evaluation API"""
+    try:
+        # Determine the correct API endpoint based on content type
+        if content_type == "scheme_of_work":
+            response = requests.post(f"{API_BASE_URL}/api/evaluate/scheme", 
+                                   json={"context_id": content_id})
+        elif content_type == "lesson_plan":
+            response = requests.post(f"{API_BASE_URL}/api/evaluate/lesson_plan", 
+                                   json={"lesson_plan_id": content_id})
+        elif content_type == "lesson_notes":
+            response = requests.post(f"{API_BASE_URL}/api/evaluate/lesson_notes", 
+                                   json={"lesson_notes_id": content_id})
+        elif content_type == "exam_generator":
+            response = requests.post(f"{API_BASE_URL}/api/evaluate/exam_generator", 
+                                   json={"exam_id": content_id})
+        else:
+            st.error("❌ Unknown content type")
+            return
+        
+        if response.status_code == 200:
+            result = response.json()
+            eval_key = f"{content_type}_{content_id}"
+            st.session_state.evaluations[eval_key] = result
+            st.success("✅ Evaluation completed successfully!")
+            
+            # Show a preview of the results
+            overall_score = result.get('overall_accuracy', 0)
+            needs_improvement = result.get('needs_improvement', False)
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Overall Score", f"{overall_score}/5.0")
+            with col2:
+                st.metric("Needs Improvement", "Yes" if needs_improvement else "No")
+                
+        else:
+            error_msg = response.json().get('detail', 'Unknown error')
+            st.error(f"❌ Evaluation failed: {error_msg}")
+            
+    except Exception as e:
+        st.error(f"�� Error: {str(e)}")
+
+def display_evaluation_results(evaluation, content_name):
+    """Display evaluation results with visual indicators"""
+    st.subheader(f"�� Evaluation Results for {content_name}")
+    
+    
+    # Overall accuracy score
+    overall_score = evaluation.get('overall_accuracy', 0)
+    composite_score = evaluation.get('composite_score', 0)  # Add this line
+    bias_score = evaluation.get('bias', {}).get('score', 0)  # Add this line
+    status = evaluation.get('status', 'unknown')
+    
+    # Color-coded overall score
+    if overall_score >= 4.5:
+        score_color = "��"
+        score_emoji = "Excellent"
+    elif overall_score >= 4.0:
+        score_color = "��"
+        score_emoji = "Good"
+    elif overall_score >= 3.0:
+        score_color = "��"
+        score_emoji = "Fair"
+    else:
+        score_color = "��"
+        score_emoji = "Needs Improvement"
+    
+    # Main metrics in a more prominent layout
+    st.markdown("---")
+    
+    # Overall score in a large, prominent box
+    col1, col2, col3, col4 = st.columns([2, 1, 1, 1])  # Add col4
+
+    with col1:
+        st.markdown(f"""
+        <div style="background-color: #f0f2f6; padding: 20px; border-radius: 10px; text-align: center; margin: 10px 0;">
+            <h2 style="margin: 0; color: #1f2937;">Overall Accuracy</h2>
+            <h1 style="margin: 10px 0; color: #059669; font-size: 3em;">{overall_score}/5.0</h1>
+            <p style="margin: 0; font-size: 1.2em; color: #6b7280;">{score_color} {score_emoji}</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col2:
+        st.markdown(f"""
+        <div style="background-color: #e0f2fe; padding: 15px; border-radius: 10px; text-align: center; margin: 10px 0;">
+            <h3 style="margin: 0; color: #0369a1;">Bias Score</h3>
+            <h2 style="margin: 5px 0; color: #0369a1; font-size: 2em;">{bias_score}/5.0</h2>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col3:
+        st.markdown(f"""
+        <div style="background-color: #f0fdf4; padding: 15px; border-radius: 10px; text-align: center; margin: 10px 0;">
+            <h3 style="margin: 0; color: #166534;">Composite Score</h3>
+            <h2 style="margin: 5px 0; color: #166534; font-size: 2em;">{composite_score}/5.0</h2>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col4:
+        needs_improvement = evaluation.get('needs_improvement', False)
+        improvement_text = "✅ Needed" if needs_improvement else "❌ Not Needed"
+        improvement_color = "#dc2626" if needs_improvement else "#059669"
+        
+        st.markdown(f"""
+        <div style="background-color: #f3f4f6; padding: 15px; border-radius: 10px; text-align: center; margin: 10px 0;">
+            <h3 style="margin: 0; color: {improvement_color};">Improvement</h3>
+            <p style="margin: 5px 0; font-size: 1.1em; color: {improvement_color};">{improvement_text}</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+    # Detailed metrics with better layout
+    st.subheader("📈 Detailed Metrics")
+    
+    # Accuracy metrics
+    accuracy = evaluation.get('accuracy', {})
+    bias = evaluation.get('bias', {})
+    
+    # Create a 2x3 grid for better readability
+    col1, col2, col3 = st.columns(3)
+    
+    metrics = [
+        ("curriculum_compliance", "Curriculum Compliance", accuracy.get('curriculum_compliance', {})),
+        ("topic_relevance", "Topic Relevance", accuracy.get('topic_relevance', {})),
+        ("content_consistency", "Content Consistency", accuracy.get('content_consistency', {})),
+        ("quality_readability", "Quality & Readability", accuracy.get('quality_readability', {})),
+        ("cultural_relevance", "Cultural Relevance", accuracy.get('cultural_relevance', {})),
+        ("bias", "Bias Assessment", bias)
+    ]
+    
+    # Display metrics in a 2x3 grid
+    for i, (key, label, metric) in enumerate(metrics):
+        with [col1, col2, col3][i % 3]:
+            score = metric.get('score', 0)
+            reason = metric.get('reason', 'No reason provided')
+            
+            # Color coding
+            if score >= 4.5:
+                color = "#059669"  # Green
+                bg_color = "#d1fae5"
+                emoji = "🟢"
+            elif score >= 4.0:
+                color = "#d97706"  # Yellow
+                bg_color = "#fef3c7"
+                emoji = "🟡"
+            elif score >= 3.0:
+                color = "#ea580c"  # Orange
+                bg_color = "#fed7aa"
+                emoji = "🟠"
+            else:
+                color = "#dc2626"  # Red
+                bg_color = "#fecaca"
+                emoji = "🔴"
+            
+            # Create metric card
+            st.markdown(f"""
+            <div style="background-color: {bg_color}; padding: 15px; border-radius: 10px; margin: 10px 0; border-left: 4px solid {color};">
+                <h4 style="margin: 0 0 10px 0; color: {color}; font-size: 1.1em;">{emoji} {label}</h4>
+                <h2 style="margin: 0 0 10px 0; color: {color}; font-size: 2em;">{score}/5</h2>
+                <details style="margin-top: 10px;">
+                    <summary style="cursor: pointer; color: {color}; font-weight: bold;">📝 View Reason</summary>
+                    <p style="margin: 10px 0 0 0; padding: 10px; background-color: white; border-radius: 5px; font-size: 0.95em; line-height: 1.4;">{reason}</p>
+                </details>
+            </div>
+            """, unsafe_allow_html=True)
+    
+    # Improvement section with better styling
+    if needs_improvement:
+        st.markdown("---")
+        st.subheader("🔧 AI-Powered Improvements")
+        
+        improved_content = evaluation.get('improved_content')
+        change_log = evaluation.get('change_log', [])
+        improved_evaluation = evaluation.get('improved_evaluation')
+        
+        if improved_content:
+            st.success("✅ **Improved content generated!**")
+            
+            # Show change log in a better format
+            if change_log:
+                st.markdown("#### 📝 Changes Made:")
+                for i, change in enumerate(change_log, 1):
+                    st.markdown(f"**{i}.** {change}")
+            
+            # Show improved content in a better container
+            with st.expander("📄 View Improved Content", expanded=True):
+                st.markdown("""
+                <div style="background-color: #f8fafc; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                """, unsafe_allow_html=True)
+                st.markdown(improved_content)
+                st.markdown("</div>", unsafe_allow_html=True)
+            
+            # Show improved evaluation if available
+            if improved_evaluation:
+                st.markdown("#### 📊 Improved Evaluation")
+                improved_overall = improved_evaluation.get('overall_accuracy', 0)
+                improvement = improved_overall - overall_score
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.metric("New Overall Score", f"{improved_overall}/5.0")
+                with col2:
+                    st.metric("Improvement", f"+{improvement:.1f}", delta=f"{improvement:.1f}")
+                
+                # Download improved content
+                if st.button("💾 Download Improved Content", type="primary"):
+                    download_improved_content(improved_content, content_name)
+        else:
+            st.warning("⚠️ No improvements were generated. The content may already be at an acceptable quality level.")
+    
+    # Low metrics section
+    low_metrics = evaluation.get('low_metrics', [])
+    if low_metrics:
+        st.markdown("---")
+        st.subheader("⚠️ Areas for Improvement")
+        for metric in low_metrics:
+            st.markdown(f"• **{metric.replace('_', ' ').title()}**")
+
+def download_improved_content(content: str, content_name: str):
+    """Download improved content as text file"""
+    filename = f"improved_{content_name.lower().replace(' ', '_')}.txt"
+    st.download_button(
+        label="💾 Download Improved Content",
+        data=content,
+        file_name=filename,
+        mime="text/plain"
+    )
+
+def show_all_evaluations():
+    """Show all evaluations in a summary view"""
+    st.subheader("📊 All Evaluations Summary")
+    
+    if not st.session_state.evaluations:
+        st.info("No evaluations available. Evaluate some content first!")
+        return
+    
+    for eval_key, evaluation in st.session_state.evaluations.items():
+        content_type, content_id = eval_key.split('_', 1)
+        overall_score = evaluation.get('overall_accuracy', 0)
+        needs_improvement = evaluation.get('needs_improvement', False)
+        
+        with st.expander(f"{content_type.title()} - Score: {overall_score}/5.0", expanded=False):
+            col1, col2 = st.columns(2)
+            with col1:
+                st.write(f"**Content ID:** {content_id}")
+                st.write(f"**Status:** {'Needs Improvement' if needs_improvement else 'Good'}")
+            with col2:
+                if st.button(f"View Details", key=f"view_{eval_key}"):
+                    display_evaluation_results(evaluation, content_type.title())
 
 if __name__ == "__main__":
     main()

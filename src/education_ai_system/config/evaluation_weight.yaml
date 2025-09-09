@@ -1,0 +1,59 @@
+# src/education_ai_system/config/evaluation_weights.yaml
+
+nigeria:
+  scheme_of_work:
+    curriculum_compliance: 0.25
+    topic_relevance: 0.20
+    content_consistency: 0.20
+    quality_readability: 0.15
+    cultural_relevance: 0.20
+  
+  lesson_plan:
+    curriculum_compliance: 0.30
+    topic_relevance: 0.25
+    content_consistency: 0.20
+    quality_readability: 0.15
+    cultural_relevance: 0.10
+  
+  lesson_notes:
+    curriculum_compliance: 0.25
+    topic_relevance: 0.20
+    content_consistency: 0.20
+    quality_readability: 0.20
+    cultural_relevance: 0.15
+  
+  exam_generator:
+    curriculum_compliance: 0.35
+    topic_relevance: 0.25
+    content_consistency: 0.20
+    quality_readability: 0.10
+    cultural_relevance: 0.10
+
+ghana:
+  scheme_of_work:
+    curriculum_compliance: 0.25
+    topic_relevance: 0.20
+    content_consistency: 0.20
+    quality_readability: 0.15
+    cultural_relevance: 0.20
+  
+  lesson_plan:
+    curriculum_compliance: 0.30
+    topic_relevance: 0.25
+    content_consistency: 0.20
+    quality_readability: 0.15
+    cultural_relevance: 0.10
+  
+  lesson_notes:
+    curriculum_compliance: 0.25
+    topic_relevance: 0.20
+    content_consistency: 0.20
+    quality_readability: 0.20
+    cultural_relevance: 0.15
+  
+  exam_generator:
+    curriculum_compliance: 0.35
+    topic_relevance: 0.25
+    content_consistency: 0.20
+    quality_readability: 0.10
+    cultural_relevance: 0.10

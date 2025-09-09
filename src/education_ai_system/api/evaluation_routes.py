@@ -10,20 +10,23 @@ session_mgr = SessionManager()
 router = APIRouter()
 evaluator = ContentEvaluator()
 
-# Update evaluate_scheme to use context_id
+# This is the route for evaluating the scheme of work
 @router.post("/scheme")
 async def evaluate_scheme(context_id: str = Body(..., embed=True)):
     try:
-        # First ensure context exists
+        #this line will get the context data (curriculum data) from the database using the context_id
         context_data = session_mgr.supabase.get_context_by_id(context_id)
         if not context_data:
             raise HTTPException(404, detail="Context not found")
         
+        #this line will get the scheme data from the database using the context_id
         scheme = session_mgr.supabase.get_scheme_by_context(context_id)
         if not scheme:
             raise HTTPException(404, detail="Associated scheme not found")
         
+       
         print(f"\n[EVALUATION REQUEST] Scheme with context ID: {context_id}")
+        #this line will evaluate the content of the scheme of work using the content evaluator class
         result = evaluator.evaluate_content_by_context("scheme_of_work", context_id)
         
         # Add debug information to error responses
@@ -54,7 +57,8 @@ async def evaluate_lesson_plan(lesson_plan_id: str = Body(..., embed=True)):  # 
         context_id = lesson_plan.get("context_id")
         if not context_id:
             raise HTTPException(400, detail="No context associated with lesson plan")
-            
+
+        #this line will evaluate the content of the lesson plan using the content evaluator class   
         result = evaluator.evaluate_content_by_context("lesson_plan", context_id)
         return result
     except Exception as e:
@@ -64,7 +68,7 @@ async def evaluate_lesson_plan(lesson_plan_id: str = Body(..., embed=True)):  # 
             "lesson_plan_id": lesson_plan_id
         }
 
-# Update evaluate_lesson_notes to use context_id
+
 @router.post("/lesson_notes")
 async def evaluate_lesson_notes(lesson_notes_id: str = Body(..., embed=True)):
     try:
@@ -91,6 +95,7 @@ async def evaluate_lesson_notes(lesson_notes_id: str = Body(..., embed=True)):
             raise HTTPException(400, detail="No context found for scheme")
         
         logger.info(f"Starting evaluation for context_id: {context_id}")
+        #this line will evaluate the content of the lesson notes using the content evaluator class
         result = evaluator.evaluate_content_by_context("lesson_notes", context_id)
         
         logger.info(f"Evaluation completed: {result.get('status')}")
@@ -102,4 +107,26 @@ async def evaluate_lesson_notes(lesson_notes_id: str = Body(..., embed=True)):
             "status": "error",
             "message": f"Evaluation failed: {str(e)}",
             "lesson_notes_id": lesson_notes_id
+        }
+
+
+
+@router.post("/exam_generator")
+async def evaluate_exam(exam_id: str = Body(..., embed=True)):
+    try:
+        exam = session_mgr.supabase.get_exam(exam_id)
+        if not exam:
+            raise HTTPException(404, detail="Exam not found")
+
+        context_id = exam.get("context_id")
+        if not context_id:
+            raise HTTPException(400, detail="No context associated with exam")
+
+        result = evaluator.evaluate_content_by_context("exam_generator", context_id)
+        return result
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Evaluation failed: {str(e)}",
+            "exam_id": exam_id
         }

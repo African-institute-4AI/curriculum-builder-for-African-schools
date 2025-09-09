@@ -60,14 +60,20 @@ class SupabaseManager:
 
 
     def get_context_by_id(self, context_id: str) -> dict:
+        """This method will be used to get the context by id from the database"""
         logger.info(f"Fetching context with ID: {context_id}")
         try:
+            #this line uses the supabase client instance to access the table in the database called 'curriculum_context'
+            #then use select to get the row with the corresponding context_id
+            #then execute the query
             result = self.client.table('curriculum_context').select("*").eq("id", context_id).execute()
+            #if the result is not empty, then return the context data
             if result.data:
                 context_data = result.data[0]
                 logger.info(f"✅ Found context: ID={context_data['id']}")
-                
-                # NEW: Ensure all required fields exist
+                #this line will ensure that the context data has the required fields
+                #if the field is not present, then set it to 'Unknown'
+                #this will help prevent errors if the context data is not complete
                 context_data.setdefault('subject', 'Unknown')
                 context_data.setdefault('grade_level', 'Unknown')
                 context_data.setdefault('topic', 'Unknown')

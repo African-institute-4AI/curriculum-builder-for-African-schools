@@ -62,31 +62,13 @@ class ContentGenerator:
             st.error(f"Error: {response.json().get('detail', 'Unknown error')}")
             return None
     
-    # def generate_exam(self, scheme_id: str, lesson_plan_id: str, lesson_notes_id: str, week: int, exam_duration: str = "2 hours", total_marks: int = 100) -> Dict[str, Any]:
-    #     """Generate exam - minimal constraints for testing"""
-    #     payload = {
-    #         "scheme_of_work_id": scheme_id,
-    #         "lesson_plan_id": lesson_plan_id,
-    #         "lesson_notes_id": lesson_notes_id,
-    #         "week": week,
-    #         "exam_duration": exam_duration,
-    #         "total_marks": total_marks
-    #     }
-        
-    #     with st.spinner("Generating exam..."):
-    #         response = requests.post(f"{self.api_base_url}/api/content/exam-generator", json=payload)
-            
-    #     if response.status_code == 200:
-    #         return response.json()
-    #     else:
-    #         st.error(f"Error: {response.json().get('detail', 'Unknown error')}")
-    #         return None
+    
 
-    def generate_exam(self, scheme_id: str, exam_type: str = "quiz") -> Dict[str, Any]:
-        """Generate exam using the new API format"""
+    def generate_exam(self, scheme_id: str, weeks: list[int]) -> Dict[str, Any]:
+        """Generate exam based on teacher-selected weeks"""
         payload = {
             "scheme_of_work_id": scheme_id,
-            "exam_type": exam_type
+            "weeks": weeks
         }
         
         with st.spinner("Generating exam..."):
