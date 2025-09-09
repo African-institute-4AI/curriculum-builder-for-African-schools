@@ -1,9 +1,26 @@
+import subprocess
+import time
+import os
 import streamlit as st
 import requests
-import os
 from components.content_generators import ContentGenerator
 from components.ui_component import create_input_form, display_content_card, create_test_examples
 from src.education_ai_system.utils.validators import extract_weeks_from_scheme
+
+# Start FastAPI in background
+def start_fastapi():
+    subprocess.Popen([
+        "uvicorn", "main:app", 
+        "--host", "0.0.0.0", 
+        "--port", "8001"
+    ])
+    time.sleep(3)
+
+# Start API if not running
+try:
+    requests.get("http://localhost:8001/", timeout=2)
+except:
+    start_fastapi()
 
 # Configuration
 API_BASE_URL = (
