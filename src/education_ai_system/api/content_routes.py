@@ -176,15 +176,17 @@ async def generate_lesson_plan(payload: dict = Body(...)):
 async def generate_notes(payload: dict = Body(...)):
     """
     create a post request to the api using the Body parameter which tells the api to use data 
-    from the request body. To generate lesson notes we have to use the scheme of work id and lesson plan id and week number
+    from the request body. To generate lesson notes we have to use the scheme of work id and lesson plan id 
+    and the same week number as the lesson plan
     """
-    required_fields = ["scheme_of_work_id", "lesson_plan_id", "week"]
+    required_fields = ["scheme_of_work_id", "lesson_plan_id"]
+    # week = str(payload.get("week")) #get week
     if any(field not in payload for field in required_fields):
         raise HTTPException(400, detail="Missing required fields in payload")
 
     scheme_id = payload["scheme_of_work_id"]
     lesson_plan_id = payload["lesson_plan_id"]
-    week = str(payload["week"])
+    
     
     try:
         # Get database records
@@ -194,6 +196,13 @@ async def generate_notes(payload: dict = Body(...)):
         if not scheme or not lesson_plan:
             raise HTTPException(404, detail="Associated content not found")
 
+        #derive week from the lesson plan (authorization)
+        lesson_plan_week = str(lesson_plan.get("payload", {}).get('week', '1')).strip()
+        if not lesson_plan_week:
+            raise HTTPException(400, detail="lesson plan is missing week number")
+
+        week = lesson_plan_week
+        
         # Extract context ID from scheme
         context_id = scheme.get("context_id")
         if not context_id:
@@ -242,107 +251,29 @@ async def generate_notes(payload: dict = Body(...)):
         raise HTTPException(500, detail=f"Generation failed: {str(e)}")
     
 
-
-# @router.post("/exam-generator")
-# async def generate_exam(payload: dict = Body(...)):
-#     """
-#     Generate exam based on existing lesson plan and lesson notes
-#     Required fields: scheme_of_work_id, lesson_plan_id, lesson_notes_id, week
-#     Optional fields: exam_duration, total_marks, question_types, num_questions
-#     """
-#     required_fields = ["scheme_of_work_id", "lesson_plan_id", "lesson_notes_id", "week"]
-#     if any(field not in payload for field in required_fields):
-#         raise HTTPException(400, detail="Missing required fields in payload")
-
-#     scheme_id = payload["scheme_of_work_id"]
-#     lesson_plan_id = payload["lesson_plan_id"]
-#     lesson_notes_id = payload["lesson_notes_id"]
-#     week = payload["week"]
-    
-#     try:
-#         # Get database records
-#         scheme = session_mgr.get_scheme(scheme_id)
-#         lesson_plan = session_mgr.get_lesson_plan(lesson_plan_id)
-#         lesson_notes = session_mgr.get_lesson_notes(lesson_notes_id)
-        
-#         if not scheme or not lesson_plan or not lesson_notes:
-#             raise HTTPException(404, detail="Associated content not found")
-
-#         # Extract context ID from scheme
-#         context_id = scheme.get("context_id")
-#         if not context_id:
-#             raise HTTPException(400, detail="Scheme is missing context ID")
-
-#         # Extract week-specific content from lesson plan and lesson notes
-#         lesson_plan_content = extract_week_content(lesson_plan.get("content", ""), week)
-#         lesson_notes_content = extract_week_content(lesson_notes.get("content", ""), week)
-
-#         # Get subject details from scheme payload
-#         scheme_payload = scheme.get("payload", {})
-
-#         # Generate exam with lesson plan and lesson notes as context
-#         exam_content = generator.generate("exam_generator", {
-#             "subject": scheme_payload.get("subject", ""),
-#             "grade_level": scheme_payload.get("grade_level", ""),
-#             "topic": payload.get("topic", scheme_payload.get("topic", "")),
-#             "week": week,
-#             "exam_duration": payload.get("exam_duration", "2 hours"),
-#             "total_marks": payload.get("total_marks", 100),
-#             "question_types": payload.get("question_types", "Multiple Choice, Short Answer, Essay"),
-#             "num_questions": payload.get("num_questions", 25),
-#             "assessment_focus": payload.get("assessment_focus", "Comprehensive assessment covering all learning objectives"),
-#             "lesson_plan_context": lesson_plan_content,
-#             "lesson_notes_context": lesson_notes_content
-#         })
-        
-#         # Store exam in database with context_id
-#         exam_id = session_mgr.create_exam(
-#             scheme_id,
-#             lesson_plan_id,
-#             lesson_notes_id,
-#             {
-#                 "payload": {
-#                     "exam_duration": payload.get("exam_duration", "2 hours"),
-#                     "total_marks": payload.get("total_marks", 100),
-#                     "question_types": payload.get("question_types", "Multiple Choice, Short Answer, Essay"),
-#                     "num_questions": payload.get("num_questions", 25),
-#                     "assessment_focus": payload.get("assessment_focus", "Comprehensive assessment covering all learning objectives"),
-#                     "week": week
-#                 },
-#                 "content": exam_content,
-#                 "context_id": context_id
-#             }
-#         )
-        
-#         return {
-#             "scheme_of_work_id": scheme_id,
-#             "lesson_plan_id": lesson_plan_id,
-#             "lesson_notes_id": lesson_notes_id,
-#             "exam_id": exam_id,
-#             "content": exam_content,
-#             "context_id": context_id,
-#             "week": week,
-#             "status": "success"
-#         }
-        
-#     except Exception as e:
-#         raise HTTPException(500, detail=f"Exam generation failed: {str(e)}")
-
-
 @router.post("/exam-generator")
 async def generate_exam(payload: dict = Body(...)):
     """
-    Generate realistic school exams using ALL available teaching materials
-    Required: scheme_of_work_id, exam_type
-    System automatically finds and uses ALL lesson plans/notes
+    Generate exams based on teacher-selected weeks.
+    Required: scheme_of_work_id, weeks (list of week numbers)
+    Uses ONLY lesson plans/notes for selected weeks.
     """
-    required_fields = ["scheme_of_work_id", "exam_type"]
+    required_fields = ["scheme_of_work_id", "weeks"]
     if any(field not in payload for field in required_fields):
-        raise HTTPException(400, detail="Missing required fields")
+        raise HTTPException(400, detail="Missing required fields: 'scheme_of_work_id', 'weeks'")
 
     scheme_id = payload["scheme_of_work_id"]
-    exam_type = payload["exam_type"]
+    weeks = payload["weeks"]
     
+    if not isinstance(weeks, (list, tuple)) or not weeks:
+        raise HTTPException(400, detail="'weeks' must be a non-empty list or tuple")
+
+    try:
+        # de-dupe + sort, ensure ints
+        weeks = sorted({int(w) for w in weeks})
+    except Exception:
+        raise HTTPException(400, detail="'weeks' must contain integers")
+
     # Get scheme first to determine country
     scheme = session_mgr.get_scheme(scheme_id)
     if not scheme:
@@ -351,192 +282,109 @@ async def generate_exam(payload: dict = Body(...)):
     # Extract country from scheme (NO HARDCODING)
     country = scheme.get("payload", {}).get("country", "nigeria")
     
-    # Load country-specific exam patterns
+    # Optional configs (fallback defaults)
+    exam_duration = payload.get("exam_duration", "1 hour")
+    total_marks = int(payload.get("total_marks", 50))
+    question_types = payload.get("question_types", "Multiple Choice, Short Answer, Essay")
+    num_questions = int(payload.get("num_questions", 25))
+    assessment_focus = payload.get("assessment_focus", "Assess learning objectives covered in selected weeks")
+
     try:
-        config_path = Path(__file__).parent.parent / "config" / f"patterns_{country}.yaml"
-        with open(config_path, 'r') as file:
-            country_patterns = yaml.safe_load(file)
-        exam_patterns = country_patterns.get('exam_patterns', {})
-    except FileNotFoundError:
-        # Fallback to universal patterns
-        exam_patterns = {}
-    
-    # Universal exam configurations with country overrides
-    default_configs = {
-        "quiz": {
-            "weeks_covered": list(range(1, 3)),
-            "duration": "30 minutes",
-            "total_marks": 20,
-            "description": "Weekly Quiz"
-        },
-        "mid_term": {
-            "weeks_covered": list(range(1, 7)),
-            "duration": "1.5 hours",
-            "total_marks": 50,
-            "description": "Mid-Term Examination"
-        },
-        "end_of_term": {
-            "weeks_covered": list(range(1, 13)),
-            "duration": "2 hours",
-            "total_marks": 100,
-            "description": "End of Term Examination"
-        },
-        "final_exam": {
-            "weeks_covered": list(range(1, 37)),
-            "duration": "3 hours", 
-            "total_marks": 100,
-            "description": "Final Examination"
-        }
-    }
-    
-    # Merge country-specific patterns with defaults
-    exam_configs = {**default_configs, **exam_patterns}
-    
-    if exam_type not in exam_configs:
-        available_types = list(exam_configs.keys())
-        raise HTTPException(400, detail=f"Invalid exam type. Available: {available_types}")
-    
-    config = exam_configs[exam_type]
-    
-    try:
-        # AUTO-EXTRACT all lesson plans and notes for this scheme
-        print(f"🔍 Searching for ALL lesson materials for scheme: {scheme_id}")
-        
-        # Get ALL lesson plans associated with this scheme
+        # Gather all lesson plans and notes for the scheme
         all_lesson_plans = session_mgr.supabase.get_lesson_plans_by_scheme(scheme_id)
-        print(f"📚 Found {len(all_lesson_plans)} lesson plans")
-        
-        # Get ALL lesson notes associated with this scheme  
         all_lesson_notes = session_mgr.supabase.get_lesson_notes_by_scheme(scheme_id)
-        print(f"📝 Found {len(all_lesson_notes)} lesson notes")
-        
-        # Build comprehensive teaching context
+
+        # DEBUG visibility to ensure we can see what's stored
+        print(f"📚 Found {len(all_lesson_plans)} lesson plans, 📝 {len(all_lesson_notes)} lesson notes for scheme {scheme_id}")
+        print("Lesson plan weeks:", [str(p.get('payload', {}).get('week', p.get('week', ''))) for p in all_lesson_plans])
+        print("Lesson note weeks:", [str(n.get('payload', {}).get('week', n.get('week', ''))) for n in all_lesson_notes])
+
+        # Build context for the selected weeks only
         teaching_materials = {
             "scheme_content": scheme.get("content", ""),
             "lesson_plans_content": [],
             "lesson_notes_content": [],
             "covered_topics": []
         }
-        
-        # Extract content for exam weeks
-        for week in config["weeks_covered"]:
-            # Get scheme topic for this week
-            week_topic = extract_week_topic(teaching_materials["scheme_content"], str(week))
-            if week_topic:
-                teaching_materials["covered_topics"].append(f"Week {week}: {week_topic}")
-            
-            # Find lesson plan for this week
-            # week_lesson_plan = next(
-            #     (plan for plan in all_lesson_plans 
-            #      if plan.get("payload", {}).get("week") == str(week)), 
-            #     None
-            # )
-            week_lesson_plan = next(
-                (plan for plan in all_lesson_plans 
-                if str(plan.get("payload", {}).get("week", "")) == str(week)), 
-                None
-)
-            if week_lesson_plan:
-                content = extract_week_content(week_lesson_plan.get("content", ""), str(week))
-                teaching_materials["lesson_plans_content"].append(f"Week {week} Plan:\n{content}")
-            
-            # Find lesson notes for this week
-            # week_lesson_notes = next(
-            #     (notes for notes in all_lesson_notes 
-            #      if notes.get("payload", {}).get("week") == str(week)), 
-            #     None
-            # )
-            week_lesson_notes = next(
-                (notes for notes in all_lesson_notes 
-                if str(notes.get("payload", {}).get("week", "")) == str(week)), 
-                None
-)
-            if week_lesson_notes:
-                content = extract_week_content(week_lesson_notes.get("content", ""), str(week))
-                teaching_materials["lesson_notes_content"].append(f"Week {week} Notes:\n{content}")
 
-        # Get scheme details
+        # Extract content for the selected weeks
+        for week in weeks:
+            week_str = str(week)
+
+            # scheme topic for this week
+            week_topic = extract_week_topic(teaching_materials['scheme_content'], week_str)
+            if week_topic:
+                teaching_materials['covered_topics'].append(f"Week {week}: {week_topic}")
+
+            # lesson plan for this week (match payload.week OR top-level week; handle int/str)
+            week_lesson_plan = next(
+                (plan for plan in all_lesson_plans
+                 if str(plan.get("payload", {}).get("week", plan.get("week", ""))) == week_str),
+                None
+            )
+            if week_lesson_plan:
+                lesson_plan_content = extract_week_content(week_lesson_plan.get("content", ""), week_str)
+                teaching_materials["lesson_plans_content"].append(f"Week {week} Plan:\n{lesson_plan_content}")
+
+            # lesson notes for this week (same robust matching)
+            week_lesson_notes = next(
+                (notes for notes in all_lesson_notes
+                 if str(notes.get("payload", {}).get("week", notes.get("week", ""))) == week_str),
+                None
+            )
+            if week_lesson_notes:
+                lesson_note_content = extract_week_content(week_lesson_notes.get("content", ""), week_str)
+                teaching_materials['lesson_notes_content'].append(f"Week {week} Notes:\n{lesson_note_content}")
+
         scheme_payload = scheme.get("payload", {})
         context_id = scheme.get("context_id")
-        
-        print(f"📊 Exam context: {len(teaching_materials['lesson_plans_content'])} lesson plans, {len(teaching_materials['lesson_notes_content'])} lesson notes")
-        
-        # # Generate comprehensive exam using ALL materials
-        # exam_content = generator.generate("exam_generator", {
-        #     "subject": scheme_payload.get("subject", ""),
-        #     "grade_level": scheme_payload.get("grade_level", ""),
-        #     "topic": scheme_payload.get("topic", ""),
-        #     "country": country,
-        #     "exam_type": exam_type,
-        #     "weeks_covered": config["weeks_covered"],
-        #     "exam_duration": payload.get("exam_duration", config["duration"]),
-        #     "total_marks": payload.get("total_marks", config["total_marks"]),
-        #     "question_types": payload.get("question_types", "Multiple Choice, Short Answer, Essay"),
-        #     "num_questions": payload.get("num_questions", 25),
-        #     "assessment_focus": payload.get("assessment_focus", "Comprehensive assessment covering all learning objectives"),
-            
-        #     # COMPREHENSIVE CONTEXT from ALL teaching materials
-        #     "scheme_context": teaching_materials["scheme_content"],
-        #     "lesson_plans_context": "\n\n".join(teaching_materials["lesson_plans_content"]) if teaching_materials["lesson_plans_content"] else "No lesson plans available for covered weeks",
-        #     "lesson_notes_context": "\n\n".join(teaching_materials["lesson_notes_content"]) if teaching_materials["lesson_notes_content"] else "No lesson notes available for covered weeks",
-        #     "covered_topics": "\n".join(teaching_materials["covered_topics"])
-        # })
 
-        # Initialize exam_content
-        exam_content = ""
-        # Generate comprehensive exam using ALL materials
-        try:
-            exam_content = generator.generate("exam_generator", {
-                "subject": scheme_payload.get("subject", ""),
-                "grade_level": scheme_payload.get("grade_level", ""),
-                "topic": scheme_payload.get("topic", ""),
-                "country": country,
-                "exam_type": exam_type,
-                "week": str(config["weeks_covered"][0]),
-                "weeks_covered": config["weeks_covered"],
-                "exam_duration": payload.get("exam_duration", config["duration"]),
-                "total_marks": payload.get("total_marks", config["total_marks"]),
-                "question_types": payload.get("question_types", "Multiple Choice, Short Answer, Essay"),
-                "num_questions": payload.get("num_questions", 25),
-                "assessment_focus": payload.get("assessment_focus", "Comprehensive assessment covering all learning objectives"),
-                
-                # COMPREHENSIVE CONTEXT from ALL teaching materials
-                "scheme_context": teaching_materials["scheme_content"],
-                "lesson_plans_context": "\n\n".join(teaching_materials["lesson_plans_content"]) if teaching_materials["lesson_plans_content"] else "No lesson plans available for covered weeks",
-                "lesson_notes_context": "\n\n".join(teaching_materials["lesson_notes_content"]) if teaching_materials["lesson_notes_content"] else "No lesson notes available for covered weeks",
-                "covered_topics": "\n".join(teaching_materials["covered_topics"])
-            })
-        except Exception as e:
-            print(f"❌ EXAM GENERATION ERROR: {str(e)}")
-            print(f"❌ ERROR TYPE: {type(e)}")
-            traceback.print_exc()
-        
-        # Store exam in database
+        # Generate Exam
+        exam_content = generator.generate("exam_generator", {
+            "subject": scheme_payload.get("subject", ""),
+            "grade_level": scheme_payload.get("grade_level", ""), 
+            "topic": scheme_payload.get("topic", ""),
+            "country": country,
+
+            "weeks_covered": weeks,
+            "exam_duration": exam_duration,
+            "total_marks": total_marks,
+            "question_types": question_types,
+            "num_questions": num_questions,
+            "assessment_focus": assessment_focus,
+
+            "scheme_context": teaching_materials['scheme_content'],
+            "lesson_plans_context": "\n\n".join(teaching_materials['lesson_plans_content']) 
+                if teaching_materials['lesson_plans_content'] else "No lesson plans available for selected weeks",
+            "lesson_notes_context": "\n\n".join(teaching_materials['lesson_notes_content']) 
+                if teaching_materials['lesson_notes_content'] else "No lesson notes available for selected weeks",
+            "covered_topics": "\n".join(teaching_materials['covered_topics'])
+        })
+
+        # Store in database
         exam_id = session_mgr.create_exam(
             scheme_id,
-            None,  # No single lesson plan - uses multiple
-            None,  # No single lesson notes - uses multiple
+            None, 
+            None,
             {
-                "payload": {
-                    "exam_type": exam_type,
-                    "weeks_covered": config["weeks_covered"],
-                    "exam_duration": config["duration"],
-                    "total_marks": config["total_marks"],
+                "payload":{
+                    "weeks_covered": weeks,
+                    "exam_duration": exam_duration,
+                    "total_marks": total_marks, 
                     "country": country,
                     "materials_used": {
-                        "lesson_plans": len(teaching_materials["lesson_plans_content"]),
-                        "lesson_notes": len(teaching_materials["lesson_notes_content"])
+                        "lesson_plans": len(teaching_materials['lesson_plans_content']),
+                        "lesson_notes": len(teaching_materials['lesson_notes_content'])
                     }
                 },
                 "content": exam_content,
                 "context_id": context_id
             }
         )
-        
+
         return {
             "exam_id": exam_id,
-            "exam_type": exam_type,
-            "weeks_covered": config["weeks_covered"],
+            "weeks_covered": weeks,
             "country": country,
             "materials_used": {
                 "scheme": True,
@@ -546,6 +394,351 @@ async def generate_exam(payload: dict = Body(...)):
             "content": exam_content,
             "status": "success"
         }
-        
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(500, detail=f"Exam generation failed: {str(e)}")
+
+# @router.post("/exam-generator")
+# async def generate_exam(payload: dict = Body(...)):
+#     """
+#     Generate realistic school exams using ALL available teaching materials
+#     Required: scheme_of_work_id, weeks (list of week numbers)
+#     System automatically finds and uses ALL lesson plans/notes
+#     """
+#     required_fields = ["scheme_of_work_id", "weeks"]
+#     if any(field not in payload for field in required_fields):
+#         raise HTTPException(400, detail="Missing required fields: 'week_of_work_id', 'weeks'")
+
+#     scheme_id = payload["scheme_of_work_id"]
+#     weeks = payload["weeks"]
+    
+#     if not isinstance(weeks, (list, tuple)) or not weeks:
+#         raise HTTPException(400, detail="weeks must be a non-empty list or tuple")
+
+#     try:
+#         weeks = [int(w) for w in weeks]
+#     except Exception:
+#         raise HTTPException(400, detail=" 'weeks' must contain integers")
+
+#     # Get scheme first to determine country
+#     scheme = session_mgr.get_scheme(scheme_id)
+#     if not scheme:
+#         raise HTTPException(404, detail="Scheme not found")
+    
+#     # Extract country from scheme (NO HARDCODING)
+#     country = scheme.get("payload", {}).get("country", "nigeria")
+    
+#     #optional configs (fallback defaults)
+#     exam_duration = payload.get("exam_duration", "1 hour")
+#     total_marks = int(payload.get("total_marks", 50))
+#     question_types = payload.get("question_types", "Multiple Choice, Short Answer, Essay")
+#     num_questions = int(payload.get("num_questions", 25))
+#     assessment_focus = payload.get("assessment_focus", "Assess learning objectives covered in selected weeks")
+
+#     try:
+#         #Gather all lesson plans and notes for the scheme
+#         all_lesson_plans = session_mgr.supabase.get_lesson_plans_by_scheme(scheme_id)
+#         all_lesson_notes = session_mgr.supabase.get_lesson_notes_by_scheme(scheme_id)
+
+#         #Build context for the selected weeks only
+#         teaching_materials = {
+#             "scheme_content": scheme.get("content", ""),
+#             "lesson_plans_content": [],
+#             "lesson_notes_content": [],
+#             "covered_topics": []
+#         }
+
+#         #Extract content for the selected weeks
+#         for week in weeks:
+#             week_str = str(week)
+
+#             #scheme topic for this week
+#             week_topic = extract_week_topic(teaching_materials['scheme_content'], week_str)
+#             if week_topic:
+#                 teaching_materials['covered_topics'].append(f"week {week}: {week_topic}")
+
+#             #lesson plan for this week
+#             week_lesson_plan = next(
+#                 (plan for plan in all_lesson_plans
+#                 if str(plan.get("payload", {}).get("week", "")) == week_str),
+#                 None
+#             )
+#             if week_lesson_plan:
+#                 lesson_plan_content = extract_week_content(week_lesson_plan.get("content", ""), week_str)
+#                 teaching_materials["lesson_plans_content"].append(f"week {week}: Plan: \n{lesson_plan_content}")
+
+#             week_lesson_notes = next(
+#                 (notes for notes in all_lesson_notes
+#                     if str(notes.get("payload", {}).get("week", "")) == week_str),
+#                 None
+#             )
+#             if week_lesson_notes:
+#                 lesson_note_content = extract_week_content(week_lesson_notes.get("content", ""), week_str)
+#                 teaching_materials['lesson_notes_content'].append(f"week {week} Notes:\n{lesson_note_content}")
+
+#         scheme_payload = scheme.get("payload", {})
+#         context_id = scheme.get("context_id")
+
+#         #Generate Exam
+#         exam_content = generator.generate("exam_generator", {
+#             "subject": scheme_payload.get("subject", ""),
+#             "grade_level": scheme_payload.get("grade_level", ""), 
+#             "topic": scheme_payload.get("topic", ""),
+#             "country": country,
+
+#             "weeks_covered": weeks,
+#             "exam_duration": exam_duration,
+#             "total_marks": total_marks,
+#             "question_types": question_types,
+#             "num_question": num_questions,
+#             "assessment_focus": assessment_focus,
+
+
+#             "scheme_context": teaching_materials['scheme_content'],
+#             "lesson_plans_context": "\n\n".join(teaching_materials['lesson_plans_content']) 
+#             if teaching_materials['lesson_plans_content'] else "No lesson plan available for selected week",
+#             "lesson_notes_context": "\n\n".join(teaching_materials['lesson_notes_content']) 
+#             if teaching_materials['lesson_notes_content'] else "No lesson note available for selected week",
+#             "covered_topics": "\n\n.join(teaching_materials['covered_topics'])"
+#         })
+
+#         #stor in database
+#         exam_id = session_mgr.create_exam(
+#             scheme_id,
+#             None, 
+#             None,
+#             {
+#                 "payload":{
+#                     "weeks_covered": weeks,
+#                     "exam_duration": exam_duration,
+#                     "total_marks": total_marks, 
+#                     "country": country,
+#                     "materials_used": {
+#                         "lesson_plans": len(teaching_materials['lesson_plans_content']),
+#                         "lesson_notes": len(teaching_materials['lesson_notes_content'])
+
+#                     }
+#                 },
+#                 "content": exam_content,
+#                 "context_id": context_id
+#             }
+#         )
+
+#         return {
+#             "exam_id": exam_id,
+#             "weeks_covered": weeks,
+#             "country": country,
+#             "material_used": {
+#                 "scheme": True,
+#                 "lesson_plans": len(teaching_materials["lesson_plans_content"]),
+#                 "lesson_notes": len(teaching_materials["lesson_notes_content"])
+#             },
+#             "content": exam_content,
+#             "status": "success"
+#         }
+#     except HTTPException:
+#         raise
+#     except Exception as e:
+#         raise HTTPException(500, detail=f"Exam generation failed: {str(e)}")
+
+
+
+#     # Load country-specific exam patterns
+#     try:
+#         config_path = Path(__file__).parent.parent / "config" / f"patterns_{country}.yaml"
+#         with open(config_path, 'r') as file:
+#             country_patterns = yaml.safe_load(file)
+#         exam_patterns = country_patterns.get('exam_patterns', {})
+#     except FileNotFoundError:
+#         # Fallback to universal patterns
+#         exam_patterns = {}
+    
+#     # Universal exam configurations with country overrides
+#     default_configs = {
+#         "quiz": {
+#             "weeks_covered": list(range(1, 3)),
+#             "duration": "30 minutes",
+#             "total_marks": 20,
+#             "description": "Weekly Quiz"
+#         },
+#         "mid_term": {
+#             "weeks_covered": list(range(1, 7)),
+#             "duration": "1.5 hours",
+#             "total_marks": 50,
+#             "description": "Mid-Term Examination"
+#         },
+#         "end_of_term": {
+#             "weeks_covered": list(range(1, 13)),
+#             "duration": "2 hours",
+#             "total_marks": 100,
+#             "description": "End of Term Examination"
+#         },
+#         "final_exam": {
+#             "weeks_covered": list(range(1, 37)),
+#             "duration": "3 hours", 
+#             "total_marks": 100,
+#             "description": "Final Examination"
+#         }
+#     }
+    
+#     # Merge country-specific patterns with defaults
+#     exam_configs = {**default_configs, **exam_patterns}
+    
+#     if exam_type not in exam_configs:
+#         available_types = list(exam_configs.keys())
+#         raise HTTPException(400, detail=f"Invalid exam type. Available: {available_types}")
+    
+#     config = exam_configs[exam_type]
+    
+#     try:
+#         # AUTO-EXTRACT all lesson plans and notes for this scheme
+#         print(f"🔍 Searching for ALL lesson materials for scheme: {scheme_id}")
+        
+#         # Get ALL lesson plans associated with this scheme
+#         all_lesson_plans = session_mgr.supabase.get_lesson_plans_by_scheme(scheme_id)
+#         print(f"📚 Found {len(all_lesson_plans)} lesson plans")
+        
+#         # Get ALL lesson notes associated with this scheme  
+#         all_lesson_notes = session_mgr.supabase.get_lesson_notes_by_scheme(scheme_id)
+#         print(f"📝 Found {len(all_lesson_notes)} lesson notes")
+        
+#         # Build comprehensive teaching context
+#         teaching_materials = {
+#             "scheme_content": scheme.get("content", ""),
+#             "lesson_plans_content": [],
+#             "lesson_notes_content": [],
+#             "covered_topics": []
+#         }
+        
+#         # Extract content for exam weeks
+#         for week in config["weeks_covered"]:
+#             # Get scheme topic for this week
+#             week_topic = extract_week_topic(teaching_materials["scheme_content"], str(week))
+#             if week_topic:
+#                 teaching_materials["covered_topics"].append(f"Week {week}: {week_topic}")
+            
+#             # Find lesson plan for this week
+#             # week_lesson_plan = next(
+#             #     (plan for plan in all_lesson_plans 
+#             #      if plan.get("payload", {}).get("week") == str(week)), 
+#             #     None
+#             # )
+#             week_lesson_plan = next(
+#                 (plan for plan in all_lesson_plans 
+#                 if str(plan.get("payload", {}).get("week", "")) == str(week)), 
+#                 None
+# )
+#             if week_lesson_plan:
+#                 content = extract_week_content(week_lesson_plan.get("content", ""), str(week))
+#                 teaching_materials["lesson_plans_content"].append(f"Week {week} Plan:\n{content}")
+            
+#             # Find lesson notes for this week
+#             # week_lesson_notes = next(
+#             #     (notes for notes in all_lesson_notes 
+#             #      if notes.get("payload", {}).get("week") == str(week)), 
+#             #     None
+#             # )
+#             week_lesson_notes = next(
+#                 (notes for notes in all_lesson_notes 
+#                 if str(notes.get("payload", {}).get("week", "")) == str(week)), 
+#                 None
+# )
+#             if week_lesson_notes:
+#                 content = extract_week_content(week_lesson_notes.get("content", ""), str(week))
+#                 teaching_materials["lesson_notes_content"].append(f"Week {week} Notes:\n{content}")
+
+#         # Get scheme details
+#         scheme_payload = scheme.get("payload", {})
+#         context_id = scheme.get("context_id")
+        
+#         print(f"📊 Exam context: {len(teaching_materials['lesson_plans_content'])} lesson plans, {len(teaching_materials['lesson_notes_content'])} lesson notes")
+        
+#         # # Generate comprehensive exam using ALL materials
+#         # exam_content = generator.generate("exam_generator", {
+#         #     "subject": scheme_payload.get("subject", ""),
+#         #     "grade_level": scheme_payload.get("grade_level", ""),
+#         #     "topic": scheme_payload.get("topic", ""),
+#         #     "country": country,
+#         #     "exam_type": exam_type,
+#         #     "weeks_covered": config["weeks_covered"],
+#         #     "exam_duration": payload.get("exam_duration", config["duration"]),
+#         #     "total_marks": payload.get("total_marks", config["total_marks"]),
+#         #     "question_types": payload.get("question_types", "Multiple Choice, Short Answer, Essay"),
+#         #     "num_questions": payload.get("num_questions", 25),
+#         #     "assessment_focus": payload.get("assessment_focus", "Comprehensive assessment covering all learning objectives"),
+            
+#         #     # COMPREHENSIVE CONTEXT from ALL teaching materials
+#         #     "scheme_context": teaching_materials["scheme_content"],
+#         #     "lesson_plans_context": "\n\n".join(teaching_materials["lesson_plans_content"]) if teaching_materials["lesson_plans_content"] else "No lesson plans available for covered weeks",
+#         #     "lesson_notes_context": "\n\n".join(teaching_materials["lesson_notes_content"]) if teaching_materials["lesson_notes_content"] else "No lesson notes available for covered weeks",
+#         #     "covered_topics": "\n".join(teaching_materials["covered_topics"])
+#         # })
+
+#         # Initialize exam_content
+#         exam_content = ""
+#         # Generate comprehensive exam using ALL materials
+#         try:
+#             exam_content = generator.generate("exam_generator", {
+#                 "subject": scheme_payload.get("subject", ""),
+#                 "grade_level": scheme_payload.get("grade_level", ""),
+#                 "topic": scheme_payload.get("topic", ""),
+#                 "country": country,
+#                 "exam_type": exam_type,
+#                 "week": str(config["weeks_covered"][0]),
+#                 "weeks_covered": config["weeks_covered"],
+#                 "exam_duration": payload.get("exam_duration", config["duration"]),
+#                 "total_marks": payload.get("total_marks", config["total_marks"]),
+#                 "question_types": payload.get("question_types", "Multiple Choice, Short Answer, Essay"),
+#                 "num_questions": payload.get("num_questions", 25),
+#                 "assessment_focus": payload.get("assessment_focus", "Comprehensive assessment covering all learning objectives"),
+                
+#                 # COMPREHENSIVE CONTEXT from ALL teaching materials
+#                 "scheme_context": teaching_materials["scheme_content"],
+#                 "lesson_plans_context": "\n\n".join(teaching_materials["lesson_plans_content"]) if teaching_materials["lesson_plans_content"] else "No lesson plans available for covered weeks",
+#                 "lesson_notes_context": "\n\n".join(teaching_materials["lesson_notes_content"]) if teaching_materials["lesson_notes_content"] else "No lesson notes available for covered weeks",
+#                 "covered_topics": "\n".join(teaching_materials["covered_topics"])
+#             })
+#         except Exception as e:
+#             print(f"❌ EXAM GENERATION ERROR: {str(e)}")
+#             print(f"❌ ERROR TYPE: {type(e)}")
+#             traceback.print_exc()
+        
+#         # Store exam in database
+#         exam_id = session_mgr.create_exam(
+#             scheme_id,
+#             None,  # No single lesson plan - uses multiple
+#             None,  # No single lesson notes - uses multiple
+#             {
+#                 "payload": {
+#                     "exam_type": exam_type,
+#                     "weeks_covered": config["weeks_covered"],
+#                     "exam_duration": config["duration"],
+#                     "total_marks": config["total_marks"],
+#                     "country": country,
+#                     "materials_used": {
+#                         "lesson_plans": len(teaching_materials["lesson_plans_content"]),
+#                         "lesson_notes": len(teaching_materials["lesson_notes_content"])
+#                     }
+#                 },
+#                 "content": exam_content,
+#                 "context_id": context_id
+#             }
+#         )
+        
+#         return {
+#             "exam_id": exam_id,
+#             "exam_type": exam_type,
+#             "weeks_covered": config["weeks_covered"],
+#             "country": country,
+#             "materials_used": {
+#                 "scheme": True,
+#                 "lesson_plans": len(teaching_materials["lesson_plans_content"]),
+#                 "lesson_notes": len(teaching_materials["lesson_notes_content"])
+#             },
+#             "content": exam_content,
+#             "status": "success"
+#         }
+        
+#     except Exception as e:
+#         raise HTTPException(500, detail=f"Exam generation failed: {str(e)}")

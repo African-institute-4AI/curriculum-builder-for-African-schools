@@ -4,6 +4,8 @@ from langchain_groq import ChatGroq
 from src.education_ai_system.utils.validators import load_prompt
 import yaml
 
+
+
 class ContentGenerator:
     def __init__(self, country: str = "nigeria"):
         self.country = country
@@ -12,7 +14,7 @@ class ContentGenerator:
         #a model is used with the following specifications
         self.llm = ChatGroq(
                     temperature=0.3, #randomness of output generated
-                    model_name="llama3-70b-8192", #model used
+                    model_name="llama-3.3-70b-versatile", #model used
                     max_tokens=4096 #max token to be generated
                     )
         #use the load prompt method from validators package to load the predefined prompts
