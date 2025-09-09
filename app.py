@@ -8,11 +8,43 @@ from components.ui_component import create_input_form, display_content_card, cre
 from src.education_ai_system.utils.validators import extract_weeks_from_scheme
 
 
-# Fix Streamlit permission issue BEFORE importing streamlit
-os.environ['STREAMLIT_SERVER_HEADLESS'] = 'true'
-os.environ['STREAMLIT_SERVER_ENABLE_CORS'] = 'false'
-os.environ['STREAMLIT_SERVER_PORT'] = '8501'
-os.environ['STREAMLIT_BROWSER_GATHER_USAGE_STATS'] = 'false'
+# Fix Streamlit permission issues BEFORE importing streamlit
+def setup_streamlit_config():
+    """Setup Streamlit configuration to avoid permission issues"""
+    # Create a temporary directory for Streamlit config
+    temp_dir = tempfile.mkdtemp()
+    streamlit_dir = os.path.join(temp_dir, '.streamlit')
+    os.makedirs(streamlit_dir, exist_ok=True)
+    
+    # Set environment variables
+    os.environ['STREAMLIT_CONFIG_DIR'] = streamlit_dir
+    os.environ['STREAMLIT_SERVER_HEADLESS'] = 'true'
+    os.environ['STREAMLIT_SERVER_ENABLE_CORS'] = 'false'
+    os.environ['STREAMLIT_SERVER_PORT'] = '8501'
+    os.environ['STREAMLIT_BROWSER_GATHER_USAGE_STATS'] = 'false'
+    os.environ['STREAMLIT_SERVER_ENABLE_XSRF_PROTECTION'] = 'false'
+    
+    # Create config file to prevent metrics collection
+    config_content = """
+[browser]
+gatherUsageStats = false
+
+[server]
+headless = true
+enableCORS = false
+enableXsrfProtection = false
+port = 8501
+
+[global]
+disableWatchdogWarning = true
+"""
+    
+    config_file = os.path.join(streamlit_dir, 'config.toml')
+    with open(config_file, 'w') as f:
+        f.write(config_content)
+
+# Setup configuration before any Streamlit imports
+setup_streamlit_config()
 
 # Start FastAPI in background
 def start_fastapi():
@@ -28,9 +60,6 @@ try:
     requests.get("http://localhost:8001/", timeout=2)
 except:
     start_fastapi()
-
-# Now import streamlit
-import streamlit as st
 
 # Configuration
 API_BASE_URL = (
