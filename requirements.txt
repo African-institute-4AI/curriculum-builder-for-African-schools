@@ -1,5 +1,5 @@
-poetry
 fastapi[standard]
+uvicorn[standard]
 torch
 pinecone
 transformers
@@ -21,3 +21,4 @@ langchain_community
 langchain_text_splitters
 langchain-openai
 langchain-groq
+requests
