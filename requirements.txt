@@ -19,13 +19,7 @@
 # # langchain-openai
 # langchain-groq
 
-# PyTorch CPU-only
---index-url https://download.pytorch.org/whl/cpu
-torch
-torchvision
-torchaudio
-
-# Core dependencies
+# Core dependencies (from PyPI)
 fastapi[standard]
 pinecone
 transformers
@@ -43,3 +37,10 @@ langchain-groq
 requests
 pyyaml
 psutil
+
+# PyTorch CPU-only (from PyTorch index)
+--index-url https://download.pytorch.org/whl/cpu
+torch
+torchvision
+torchaudio
+--index-url https://pypi.org/simple
