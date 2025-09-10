@@ -2,7 +2,7 @@
 import yaml
 from src.education_ai_system.embeddings.pinecone_manager import PineconeManager
 from src.education_ai_system.utils.subject_mapper import subject_mapper
-from langchain.document_loaders import PyPDFLoader
+from langchain_community.document_loaders import PyPDFLoader
 from langchain_groq import ChatGroq
 from pathlib import Path
 import json
