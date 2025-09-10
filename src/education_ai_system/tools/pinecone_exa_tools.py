@@ -16,9 +16,27 @@ from src.education_ai_system.utils.validators import validate_user_input
 # Load environment variables
 load_dotenv()
 
-# Initialize tokenizer and model for embeddings
-tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
-model = AutoModel.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+# ✅ Global variables for memory efficiency
+tokenizer = None
+model = None
+
+def get_model():
+    global model
+    if model is None:
+        print("🔄 Loading embedding model...")
+        model = AutoModel.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+        # ✅ Force CPU usage for deployment
+        model.eval()  # Set to evaluation mode
+        print("✅ Model loaded successfully")
+    return model
+
+def get_tokenizer():
+    global tokenizer
+    if tokenizer is None:
+        print("🔄 Loading tokenizer...")
+        tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+        print("✅ Tokenizer loaded successfully")
+    return tokenizer
 
 #this class inherite from the abstract class BaseTool 
 #that defines all the interface that all langchain too must implement
@@ -183,103 +201,7 @@ class PineconeRetrievalTool(BaseTool):
         except Exception as e:
             return json.dumps({"status": "error", "message": f"Unexpected error: {str(e)}"})
 
-    # def _validate_and_retrieve(self, query: Dict[str, str], num_results: int = 3) -> Dict:
-    #     """Validates the query and retrieves context from Pinecone"""
-        
-    #     # FIRST: Check if index has any data
-    #     try:
-    #         stats = self.index.describe_index_stats()
-    #         total_vectors = stats.get('total_vector_count', 0)
-    #         print(f"📊 TOTAL VECTORS IN INDEX: {total_vectors}")
-            
-    #         if total_vectors == 0:
-    #             return {
-    #                 "status": "error",
-    #                 "message": "Pinecone index is EMPTY. Please upload a PDF document first using the upload endpoint."
-    #             }
-    #     except Exception as e:
-    #         print(f"❌ Error checking index: {e}")
-        
-    #     # Validate user input
-    #     if not validate_user_input(query):
-    #         return {
-    #             "status": "invalid",
-    #             "message": "Invalid query. Ensure it matches the format and predefined inputs."
-    #         }
-
-    #     # Clean query and map subjects only
-    #     query = {k: v.strip().lower() for k, v in query.items()}
-    #     query['subject'] = subject_mapper.normalize_subject(query['subject'])
-
-    #     print(f"🔍 Searching for: subject='{query['subject']}', grade='{query['grade_level']}'")
-
-    #     # Generate query text for embedding
-    #     user_query_text = f"{query['subject']} {query['grade_level']} {query['topic']}"
-    #     query_vector = self._get_query_embedding(user_query_text)
-
-    #     # Query Pinecone with COUNTRY and SUBJECT filters
-    #     try:
-    #         if not self.index:
-    #             raise ValueError("Pinecone index is not initialized.")
-            
-
-    #         # Search with both country and subject filters
-    #         response = self.index.query(
-    #             vector=query_vector,
-    #             top_k=30,
-    #             include_metadata=True,
-    #             filter={
-    #                 "$and": [
-    #                     {"country": {"$eq": self.country}},
-    #                     {"subject": {"$eq": query['subject']}}
-    #                 ]
-    #             }
-    #         )
-
-    #         matches = response.get("matches", [])
-    #         print(f"🔍 Found {len(matches)} matches for subject '{query['subject']}'")
-            
-    #         # Filter by grade using your smart matching
-    #         filtered_matches = []
-    #         for match in matches:
-    #             stored_grade = match["metadata"].get("grade_level", "")
-    #             if self._grade_matches(query['grade_level'], stored_grade):
-    #                 filtered_matches.append(match)
-            
-    #         print(f"✅ {len(filtered_matches)} matches after grade filtering")
-    #         final_matches = filtered_matches[:num_results]
-
-    #         if not final_matches:
-    #             return {"status": "invalid", "message": "No relevant data found.", "alternatives": []}
-
-    #         # Build context from top matches
-    #         context = "\n\n".join([
-    #             match["metadata"].get("content", "")
-    #             for match in final_matches
-    #         ])
-            
-    #         # Store context for future use
-    #         self.stored_context = context
-
-    #         # Prepare matches in a serializable format
-    #         serializable_matches = [
-    #             {
-    #                 "id": match["id"],
-    #                 "score": match["score"],
-    #                 "metadata": match["metadata"]
-    #             }
-    #             for match in final_matches
-    #         ]
-
-    #         return {
-    #             "status": "valid",
-    #             "context": context,
-    #             "matches": serializable_matches,
-    #             "alternatives": []
-    #         }
-
-    #     except Exception as e:
-    #         return {"status": "error", "message": f"Error querying Pinecone: {e}"}
+    
 
     def _validate_and_retrieve(self, query: Dict[str, str], num_results: int = 10) -> Dict:
         """Validates the query and retrieves context from Pinecone"""
@@ -417,6 +339,9 @@ class PineconeRetrievalTool(BaseTool):
 
     def _get_query_embedding(self, text: str) -> List[float]:
         """Generates embeddings for a query text"""
+        # Initialize tokenizer and model for embeddings
+        tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+        model = AutoModel.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
         inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True)
         with torch.no_grad():
             query_embedding = model(**inputs).last_hidden_state.mean(dim=1).cpu().numpy().squeeze()
