@@ -19,8 +19,15 @@
 # # langchain-openai
 # langchain-groq
 
+# PyTorch CPU-only
+--index-url https://download.pytorch.org/whl/cpu
+torch
+torchvision
+torchaudio
+
+# Core dependencies
 fastapi[standard]
-pinecone-client
+pinecone
 transformers
 sentence-transformers
 python-dotenv
@@ -29,9 +36,10 @@ supabase
 langchain
 streamlit
 pypdf
-langchain_community
-langchain_text_splitters
+langchain-community
+langchain-text-splitters
 langchain-openai
 langchain-groq
---index-url https://download.pytorch.org/whl/cpu
-torch
+requests
+pyyaml
+psutil
