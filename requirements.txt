@@ -1,6 +1,26 @@
-# poetry
+# # poetry
+# fastapi[standard]
+# pinecone
+# transformers
+# sentence-transformers
+# python-dotenv
+# python-docx
+# supabase
+# langchain
+# streamlit
+# --index-url https://download.pytorch.org/whl/cpu
+# torch
+# # torch==2.1.0
+# # torchvision==0.16.0
+# # torchaudio==2.1.0
+# pypdf
+# langchain_community
+# langchain_text_splitters
+# # langchain-openai
+# langchain-groq
+
 fastapi[standard]
-pinecone
+pinecone-client
 transformers
 sentence-transformers
 python-dotenv
@@ -8,13 +28,10 @@ python-docx
 supabase
 langchain
 streamlit
---index-url https://download.pytorch.org/whl/cpu
-torch
-# torch==2.1.0
-# torchvision==0.16.0
-# torchaudio==2.1.0
 pypdf
 langchain_community
 langchain_text_splitters
-# langchain-openai
+langchain-openai
 langchain-groq
+--index-url https://download.pytorch.org/whl/cpu
+torch

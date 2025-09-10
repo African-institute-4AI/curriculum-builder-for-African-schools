@@ -9,7 +9,7 @@ from transformers import AutoTokenizer, AutoModel
 from pydantic import Field, ConfigDict
 from typing import List, Optional, Dict, Any
 from dotenv import load_dotenv
-import pinecone
+from pinecone import Pinecone
 from src.education_ai_system.utils.subject_mapper import subject_mapper
 from src.education_ai_system.utils.validators import validate_user_input
 
