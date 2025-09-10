@@ -105,7 +105,7 @@ class PineconeManager:
         embeddings = []
         
         # ✅ Process in smaller batches to reduce memory usage
-        batch_size = 10  # Process 10 chunks at a time
+        batch_size = 5  # Process 5 chunks at a time
         
         for i in range(0, len(chunks), batch_size):
             batch_chunks = chunks[i:i + batch_size]
