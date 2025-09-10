@@ -70,7 +70,7 @@ class PineconeRetrievalTool(BaseTool):
             raise ValueError("Error: Pinecone API key is missing. Check your environment variables.")
         #get the pinecone class and pass the pinecone api
         #to create the pinecone object (instance)
-        self.pc = pinecone.Pinecone(api_key=api_key)
+        self.pc = Pinecone(api_key=api_key)
 
         # Initialize Pinecone index
         try:
