@@ -6,7 +6,8 @@ import json
 import re
 from langchain.output_parsers import PydanticOutputParser
 from langchain.prompts import PromptTemplate
-from langchain_core.pydantic_v1 import ValidationError
+# from langchain_core.pydantic_v1 import ValidationError
+from pydantic import ValidationError
 from pydantic import BaseModel, Field, confloat, conint
 from typing import Dict
 import yaml
