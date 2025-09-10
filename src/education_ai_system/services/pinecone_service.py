@@ -74,8 +74,14 @@ class VectorizationService:
         
         print(f"📊 Processed {len(chunks)} chunks with grade-specific metadata")
     
-        # Store in Pinecone WITH COUNTRY
-        self.pinecone_manager.upsert_content(chunks, metadata, country=self.country)
+        # Store in Pinecone WITH COUNTRY and add error handling
+        try:
+            self.pinecone_manager.upsert_content(chunks, metadata, country=self.country)
+            print(f"✅ Successfully stored {len(chunks)} chunks in Pinecone")
+            return {"status": "success", "chunks_stored": len(chunks)}
+        except Exception as e:
+            print(f"❌ Error storing in Pinecone: {e}")
+            return {"status": "error", "message": str(e)}
 
    
     def _determine_chunk_grade(self, chunk_text: str, grade_topics: dict, default_grade: str) -> str:
@@ -177,8 +183,8 @@ class VectorizationService:
             
             llm = ChatGroq(
                 temperature=0.1,
-                model_name="llama3-70b-8192",
-                max_tokens=500
+                model_name="llama-3.3-70b-versatile",
+                max_tokens=2048
             )
             
             response = llm.invoke([{"role": "user", "content": prompt}])
