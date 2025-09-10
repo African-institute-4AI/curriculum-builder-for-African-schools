@@ -67,4 +67,11 @@ class PineconeManager:
                 "metadata": full_metadata
             })
         
-        self.index.upsert(embeddings)
+        # ✅ Add error handling and return confirmation
+        try:
+            self.index.upsert(embeddings)
+            print(f"✅ Successfully upserted {len(embeddings)} vectors to Pinecone")
+            return {"status": "success", "vectors_upserted": len(embeddings)}
+        except Exception as e:
+            print(f"❌ Error upserting to Pinecone: {e}")
+            raise e

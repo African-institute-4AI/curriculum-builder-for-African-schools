@@ -29,14 +29,23 @@ async def process_pdf(file: UploadFile = File(...), country: str = Form(default=
         
         service = VectorizationService(country=country) #the pinecone object that's used to stored the extracted pdf document
         #use the vectorizationservice object to process the file
-        service.process_and_store_pdf(file_path)
+        result =service.process_and_store_pdf(file_path)
 
 
 
         
         os.remove(file_path)
         
-        return {"status": "success", "message": "PDF processed and stored"}
+       # ✅ Return the actual result
+        if result.get("status") == "success":
+            return {
+                "status": "success", 
+                "message": f"PDF processed and stored successfully. {result.get('chunks_stored', 0)} chunks stored.",
+                "chunks_stored": result.get("chunks_stored", 0)
+            }
+        else:
+            return {"status": "error", "message": result.get("message", "Unknown error")}
+            
     except Exception as e:
         return {"status": "error", "message": str(e)}
     

@@ -14,7 +14,7 @@ class ContentGenerator:
         #a model is used with the following specifications
         self.llm = ChatGroq(
                     temperature=0.3, #randomness of output generated
-                    model_name="llama-3.3-70b-versatile", #model used
+                    model_name="llama-3.1-8b-instant", #model used
                     max_tokens=4096 #max token to be generated
                     )
         #use the load prompt method from validators package to load the predefined prompts
