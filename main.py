@@ -2,7 +2,7 @@
 import asyncio
 import os
 from fastapi import FastAPI
-# from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from src.education_ai_system.api import (
     embeddings_routes,
@@ -20,20 +20,20 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# # main.py (after app = FastAPI(...))
-# frontend_origin = os.getenv("FRONTEND_ORIGIN")  # e.g., https://your-app.streamlit.app
+# main.py (after app = FastAPI(...))
+frontend_origin = os.getenv("FRONTEND_ORIGIN")  # e.g., https://your-app.streamlit.app
 
-# origins = ["http://localhost:8501"]
-# if frontend_origin:
-#     origins.append(frontend_origin)
+origins = ["http://localhost:8501"]
+if frontend_origin:
+    origins.append(frontend_origin)
 
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=origins,
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 session_mgr = SessionManager()
 
