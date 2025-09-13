@@ -4,6 +4,7 @@ from src.education_ai_system.utils.validators import load_prompt
 from src.education_ai_system.utils.supabase_manager import SupabaseManager
 import json
 import re
+import os
 from langchain.output_parsers import PydanticOutputParser
 from langchain.prompts import PromptTemplate
 # from langchain_core.pydantic_v1 import ValidationError
@@ -152,7 +153,12 @@ class ContentEvaluator:
             print("===== END PROMPT =====\n")
             
             # Write prompt to file
-            with open("evaluation_prompt_debug.txt", "w") as f:
+            # with open("evaluation_prompt_debug.txt", "w") as f:
+            #     f.write(formatted_prompt)
+
+            # To this:
+            debug_path = os.path.join(os.getenv('TEMP_DIR', '.'), "evaluation_prompt_debug.txt")
+            with open(debug_path, "w") as f:
                 f.write(formatted_prompt)
             
             print("Sending prompt to LLM for evaluation...")
@@ -180,8 +186,13 @@ class ContentEvaluator:
             print(response.content)
             print("===== END RESPONSE =====\n")
             
-            # Write full response to file for debugging
-            with open("llm_response_debug.txt", "w") as f:
+            # # Write full response to file for debugging
+            # with open("llm_response_debug.txt", "w") as f:
+            #     f.write(response.content)
+            
+            # To this:
+            debug_path = os.path.join(os.getenv('TEMP_DIR', '.'), "llm_response_debug.txt")
+            with open(debug_path, "w") as f:
                 f.write(response.content)
             
             print("Parsing evaluation response with Pydantic...")
