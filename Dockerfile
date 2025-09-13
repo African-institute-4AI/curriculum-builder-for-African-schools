@@ -10,12 +10,13 @@ RUN apt-get update && apt-get install -y \
 
 COPY requirements.txt ./
 COPY streamlit_app.py ./
-COPY src/ ./src/
+COPY main.py ./
 COPY components/ ./components/
+COPY src/ ./src/
 
 RUN pip3 install -r requirements.txt
 
-EXPOSE 8501
+EXPOSE 8501 8001
 
 HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health
 
@@ -24,4 +25,13 @@ ENV STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
 
 RUN mkdir -p /app/.streamlit
 
-ENTRYPOINT ["streamlit", "run", "streamlit_app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+# Create a startup script to run both services
+COPY <<EOF /app/start.sh
+#!/bin/bash
+python main.py &
+streamlit run streamlit_app.py --server.port=8501 --server.address=0.0.0.0
+EOF
+
+RUN chmod +x /app/start.sh
+
+ENTRYPOINT ["/app/start.sh"]
