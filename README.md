@@ -3,7 +3,7 @@ title: AI Curriculum Builder for Africa
 emoji: 🦀
 colorFrom: blue
 colorTo: green
-sdk: streamlit
+sdk: docker
 pinned: false
 license: mit
 app_port: 8501
