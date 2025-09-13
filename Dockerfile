@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt ./
 COPY streamlit_app.py ./
 COPY src/ ./src/
+COPY components/ ./components/
 
 RUN pip3 install -r requirements.txt
 
