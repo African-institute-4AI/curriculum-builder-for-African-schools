@@ -25,13 +25,10 @@ ENV STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
 
 RUN mkdir -p /app/.streamlit
 
-# Create a startup script to run both services
-COPY <<EOF /app/start.sh
-#!/bin/bash
-python main.py &
-streamlit run streamlit_app.py --server.port=8501 --server.address=0.0.0.0
-EOF
-
-RUN chmod +x /app/start.sh
+# Create startup script that runs both services
+RUN echo '#!/bin/bash\n\
+python main.py &\n\
+streamlit run streamlit_app.py --server.port=8501 --server.address=0.0.0.0\n\
+' > /app/start.sh && chmod +x /app/start.sh
 
 ENTRYPOINT ["/app/start.sh"]
