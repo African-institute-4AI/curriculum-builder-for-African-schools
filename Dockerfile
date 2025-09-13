@@ -24,4 +24,4 @@ ENV STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
 # Create the config directory with proper permissions
 RUN mkdir -p /app/.streamlit
 
-ENTRYPOINT ["streamlit", "run", "src/streamlit_app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+ENTRYPOINT ["streamlit", "run", "streamlit_app.py", "--server.port=8501", "--server.address=0.0.0.0"]

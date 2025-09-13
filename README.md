@@ -35,7 +35,7 @@ To run locally:
 
 ```bash
 pip install -r requirements.txt
-streamlit run src/streamlit_app.py
+streamlit run streamlit_app.py
 ```
 
 ## Docker
@@ -48,7 +48,7 @@ docker run -p 8501:8501 curriculum-builder
 
 # Welcome to Streamlit!
 
-Edit `/src/streamlit_app.py` to customize this app to your heart's desire. :heart:
+Edit `streamlit_app.py` to customize this app to your heart's desire. :heart:
 
 If you have any questions, checkout our [documentation](https://docs.streamlit.io) and [community
 forums](https://discuss.streamlit.io).
