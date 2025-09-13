@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # # poetry
 # fastapi[standard]
 # pinecone
@@ -44,3 +45,8 @@ torch
 torchvision
 torchaudio
 --index-url https://pypi.org/simple
+=======
+altair
+pandas
+streamlit
+>>>>>>> 3e6e33ec449aff26cb21ef106827af0b26fbe0f5
