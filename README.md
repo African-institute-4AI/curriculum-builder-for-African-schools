@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Curriculum Builder AI System
 
 This project is an AI-powered curriculum builder designed to assist educators in generating schemes of work, lesson plans, and lesson notes based on Nigerian academic standards. The system leverages machine learning and natural language processing tools, such as Pinecone for vector similarity search and Exa API for contextual web searches, to retrieve relevant educational materials and metadata, improving the content generation process. This tool is especially useful for creating structured and culturally relevant lesson materials tailored to specific subjects, grade levels, and topics.
@@ -112,3 +113,25 @@ EXASEARCH_API_KEY=your_exa_api_key
 OPENAI_API_KEY=your_openai_api_key
 ```
 
+=======
+---
+title: AI Curriculum Builder For Africa
+emoji: 🚀
+colorFrom: red
+colorTo: red
+sdk: docker
+app_port: 8501
+tags:
+- streamlit
+pinned: false
+short_description: Streamlit template space
+license: mit
+---
+
+# Welcome to Streamlit!
+
+Edit `/src/streamlit_app.py` to customize this app to your heart's desire. :heart:
+
+If you have any questions, checkout our [documentation](https://docs.streamlit.io) and [community
+forums](https://discuss.streamlit.io).
+>>>>>>> 3e6e33ec449aff26cb21ef106827af0b26fbe0f5
