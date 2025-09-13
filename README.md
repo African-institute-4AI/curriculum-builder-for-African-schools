@@ -8,6 +8,7 @@ pinned: false
 license: mit
 app_port: 8501
 short_description: AI curriculum builder app
+sdk_version: 1.49.1
 ---
 
 # Curriculum Builder AI System
