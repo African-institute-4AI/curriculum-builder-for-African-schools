@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ---
 title: AI Curriculum Builder for Africa
 emoji: 🎓
@@ -8,13 +7,12 @@ sdk: docker
 pinned: false
 license: mit
 app_port: 8501
-=======
+---
+
 # Curriculum Builder AI System
 
 This project is an AI-powered curriculum builder designed to assist educators in generating schemes of work, lesson plans, and lesson notes based on Nigerian academic standards. The system leverages machine learning and natural language processing tools, such as Pinecone for vector similarity search and Exa API for contextual web searches, to retrieve relevant educational materials and metadata, improving the content generation process. This tool is especially useful for creating structured and culturally relevant lesson materials tailored to specific subjects, grade levels, and topics.
 
->>>>>>> 755db25c6c4d90401df2088986fd942f739233ab
----
 
 # AI Curriculum Builder for Africa
 
@@ -42,7 +40,7 @@ streamlit run src/streamlit_app.py
 
 ## Docker
 
-<<<<<<< HEAD
+
 ```bash
 docker build -t curriculum-builder .
 docker run -p 8501:8501 curriculum-builder
@@ -55,4 +53,4 @@ Edit `/src/streamlit_app.py` to customize this app to your heart's desire. :hear
 If you have any questions, checkout our [documentation](https://docs.streamlit.io) and [community
 forums](https://discuss.streamlit.io).
 
->>>>>>> 755db25c6c4d90401df2088986fd942f739233ab
+
