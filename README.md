@@ -45,7 +45,7 @@ streamlit run src/streamlit_app.py
 docker build -t curriculum-builder .
 docker run -p 8501:8501 curriculum-builder
 ```
-=======
+
 # Welcome to Streamlit!
 
 Edit `/src/streamlit_app.py` to customize this app to your heart's desire. :heart:
