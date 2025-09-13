@@ -6,6 +6,7 @@ import json
 import torch
 import re
 from transformers import AutoTokenizer, AutoModel
+from sentence_transformers import SentenceTransformer
 from pydantic import Field, ConfigDict
 from typing import List, Optional, Dict, Any
 from dotenv import load_dotenv
@@ -24,7 +25,8 @@ def get_model():
     global model
     if model is None:
         print("🔄 Loading embedding model...")
-        model = AutoModel.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+        # model = AutoModel.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+        model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
         # ✅ Force CPU usage for deployment
         model.eval()  # Set to evaluation mode
         print("✅ Model loaded successfully")
@@ -34,7 +36,8 @@ def get_tokenizer():
     global tokenizer
     if tokenizer is None:
         print("🔄 Loading tokenizer...")
-        tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+        # tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+        tokenizer = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
         print("✅ Tokenizer loaded successfully")
     return tokenizer
 
