@@ -1,12 +1,14 @@
 ---
 title: AI Curriculum Builder for Africa
-emoji: 🎓
+emoji: 🦀
 colorFrom: blue
 colorTo: green
 sdk: docker
 pinned: false
 license: mit
 app_port: 8501
+short_description: AI curriculum builder app
+sdk_version: 1.49.1
 ---
 
 # Curriculum Builder AI System
@@ -52,5 +54,3 @@ Edit `streamlit_app.py` to customize this app to your heart's desire. :heart:
 
 If you have any questions, checkout our [documentation](https://docs.streamlit.io) and [community
 forums](https://discuss.streamlit.io).
-
-
