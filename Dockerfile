@@ -8,6 +8,9 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
+# Add this line to your Dockerfile after WORKDIR /app
+RUN mkdir -p /.cache && chmod -R 777 /.cache
+
 COPY requirements.txt ./
 COPY streamlit_app.py ./
 COPY main.py ./
