@@ -22,11 +22,20 @@ app = FastAPI(
 )
 
 # main.py (after app = FastAPI(...))
-frontend_origin = os.getenv("FRONTEND_ORIGIN")  # e.g., https://your-app.streamlit.app
+# frontend_origin = os.getenv("FRONTEND_ORIGIN")  # e.g., https://your-app.streamlit.app
 
-origins = ["http://localhost:8501"]
-if frontend_origin:
-    origins.append(frontend_origin)
+# origins = ["http://localhost:8501"]
+# Update the CORS configuration section
+origins = [
+    "http://localhost:8501",
+    "https://*.hf.space",  # Allow Hugging Face Spaces
+    "https://*.streamlit.app",
+    
+]
+
+
+# if frontend_origin:
+#     origins.append(frontend_origin)
 
 app.add_middleware(
     CORSMiddleware,
