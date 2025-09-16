@@ -33,6 +33,10 @@ ENV STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
 ENV TEMP_DIR=/app/temp
 ENV LOG_DIR=/app/logs
 
+# Add logging environment variables
+ENV PYTHONUNBUFFERED=1
+ENV LOG_LEVEL=DEBUG
+
 # # Create startup script
 # RUN echo '#!/bin/bash\n\
 # python main.py &\n\
@@ -42,9 +46,11 @@ ENV LOG_DIR=/app/logs
 # Update permissions for all files
 RUN chmod -R 777 /app
 
-# Update the startup script to use the root version
+# Update the startup script with logging
 RUN echo '#!/bin/bash\n\
+echo "Starting FastAPI backend..."\n\
 python main.py &\n\
+echo "Starting Streamlit frontend..."\n\
 streamlit run /app/streamlit_app.py --server.port=8501 --server.address=0.0.0.0\n\
 ' > /app/start.sh && chmod +x /app/start.sh
 
