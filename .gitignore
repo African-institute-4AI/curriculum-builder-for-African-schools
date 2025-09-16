@@ -64,6 +64,8 @@ genai_output/
 logs/
 data/
 *.txt
+*.pdf
+*.docx
 
 
 # Python wheels

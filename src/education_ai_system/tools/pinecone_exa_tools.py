@@ -11,6 +11,7 @@ from pydantic import Field, ConfigDict
 from typing import List, Optional, Dict, Any
 from dotenv import load_dotenv
 from pinecone import Pinecone
+import pinecone
 from src.education_ai_system.utils.subject_mapper import subject_mapper
 from src.education_ai_system.utils.validators import validate_user_input
 
