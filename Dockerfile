@@ -38,25 +38,27 @@ ENV PYTHONUNBUFFERED=1
 ENV LOG_LEVEL=DEBUG
 ENV STREAMLIT_LOG_LEVEL=DEBUG
 
-# Create startup script
-RUN echo '#!/bin/bash\n\
-python main.py &\n\
-streamlit run streamlit_app.py --server.port=8501 --server.address=0.0.0.0\n\
-' > /app/start.sh && chmod +x /app/start.sh
 
 # Update permissions for all files
 RUN chmod -R 777 /app
 
-# # Update the startup script with enhanced logging
+
+# # Create startup script
 # RUN echo '#!/bin/bash\n\
-# echo "[$(date)] Starting FastAPI backend..."\n\
-# python main.py 2>&1 | tee /app/logs/fastapi.log &\n\
-# echo "[$(date)] Starting Streamlit frontend..."\n\
-# STREAMLIT_LOG_LEVEL=DEBUG streamlit run /app/streamlit_app.py --server.port=8501 --server.address=0.0.0.0 2>&1 | tee /app/logs/streamlit.log\n\
+# python main.py &\n\
+# streamlit run streamlit_app.py --server.port=8501 --server.address=0.0.0.0\n\
 # ' > /app/start.sh && chmod +x /app/start.sh
 
-# # Ensure log files are created with proper permissions
-# RUN touch /app/logs/fastapi.log /app/logs/streamlit.log && \
-#     chmod 666 /app/logs/fastapi.log /app/logs/streamlit.log
+# Create enhanced startup script (use absolute paths, capture logs)
+RUN echo '#!/bin/bash\n\
+set -e\n\
+echo \"[$(date)] Starting FastAPI (uvicorn)\"\n\
+# Run uvicorn for the FastAPI app on port 8001 and capture logs\n\
+uvicorn main:app --host 0.0.0.0 --port 8001 --log-level info > /app/logs/fastapi.log 2>&1 &\n\
+sleep 1\n\
+echo \"[$(date)] Starting Streamlit frontend\"\n\
+export STREAMLIT_LOG_LEVEL=debug\n\
+streamlit run /app/streamlit_app.py --server.port=8501 --server.address=0.0.0.0 > /app/logs/streamlit.log 2>&1\n\
+' > /app/start.sh && chmod +x /app/start.sh
 
 ENTRYPOINT ["/app/start.sh"]
