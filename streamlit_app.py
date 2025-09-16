@@ -1,15 +1,23 @@
 import streamlit as st
 import requests
 import os
+import logging
 from components.content_generators import ContentGenerator
 from components.ui_component import create_input_form, display_content_card, create_test_examples
 from src.education_ai_system.utils.validators import extract_weeks_from_scheme
 
+
+# Configure logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
 # Configuration
 API_BASE_URL = (
     os.getenv("API_BASE_URL")
-    # or "http://localhost:8001"
-    or "http://127.0.0.1:8001"
+    or "http://localhost:8001" 
     )
 
 def main():
@@ -86,9 +94,11 @@ def process_pdf_file(uploaded_file, country):  # Add country parameter
         # Prepare file for API
         files = {"file": (uploaded_file.name, uploaded_file.getvalue(), "application/pdf")}
         data = {"country": country}  # Add country data
+
+        logger.debug(f"Sending request to {API_BASE_URL}/api/embeddings/process_pdf")
         
         with st.spinner(f"Processing {uploaded_file.name} and storing in Pinecone..."):
-            response = requests.post(f"{API_BASE_URL}/api/embeddings/process_pdf", files=files, data=data)
+            response = requests.post(f"{API_BASE_URL}/api/embeddings/process_pdf", files=files, data=data, timeout=180)
         
         if response.status_code == 200:
             result = response.json()
@@ -103,6 +113,7 @@ def process_pdf_file(uploaded_file, country):  # Add country parameter
             st.error(f"❌ **Processing failed:** {error_msg}")
             
     except Exception as e:
+        logger.error(f"Error during upload: {str(e)}", exc_info=True)
         st.error(f"🚨 **Error:** {str(e)}")
 
 def clear_pinecone_index():
