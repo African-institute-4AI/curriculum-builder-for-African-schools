@@ -33,10 +33,19 @@ ENV STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
 ENV TEMP_DIR=/app/temp
 ENV LOG_DIR=/app/logs
 
-# Create startup script
+# # Create startup script
+# RUN echo '#!/bin/bash\n\
+# python main.py &\n\
+# streamlit run streamlit_app.py --server.port=8501 --server.address=0.0.0.0\n\
+# ' > /app/start.sh && chmod +x /app/start.sh
+
+# Update permissions for all files
+RUN chmod -R 777 /app
+
+# Update the startup script to use the root version
 RUN echo '#!/bin/bash\n\
 python main.py &\n\
-streamlit run streamlit_app.py --server.port=8501 --server.address=0.0.0.0\n\
+streamlit run /app/streamlit_app.py --server.port=8501 --server.address=0.0.0.0\n\
 ' > /app/start.sh && chmod +x /app/start.sh
 
 ENTRYPOINT ["/app/start.sh"]
