@@ -36,7 +36,7 @@ ENV LOG_DIR=/app/logs
 # Add logging environment variables
 ENV PYTHONUNBUFFERED=1
 ENV LOG_LEVEL=DEBUG
-ENV STREAMLIT_LOG_LEVEL=DEBUG
+ENV STREAMLIT_LOG_LEVEL=debug
 
 
 # Update permissions for all files
@@ -49,16 +49,22 @@ RUN chmod -R 777 /app
 # streamlit run streamlit_app.py --server.port=8501 --server.address=0.0.0.0\n\
 # ' > /app/start.sh && chmod +x /app/start.sh
 
-# Create enhanced startup script (use absolute paths, capture logs)
-RUN echo '#!/bin/bash\n\
-set -e\n\
-echo \"[$(date)] Starting FastAPI (uvicorn)\"\n\
-# Run uvicorn for the FastAPI app on port 8001 and capture logs\n\
-uvicorn main:app --host 0.0.0.0 --port 8001 --log-level info > /app/logs/fastapi.log 2>&1 &\n\
-sleep 1\n\
-echo \"[$(date)] Starting Streamlit frontend\"\n\
-export STREAMLIT_LOG_LEVEL=debug\n\
-streamlit run /app/streamlit_app.py --server.port=8501 --server.address=0.0.0.0 > /app/logs/streamlit.log 2>&1\n\
-' > /app/start.sh && chmod +x /app/start.sh
+RUN mkdir -p /app/logs
+
+RUN cat > /app/start.sh <<'EOF'
+#!/bin/bash
+set -e
+
+echo "[$(date)] Starting FastAPI (uvicorn)"
+uvicorn main:app --host 0.0.0.0 --port 8001 --log-level info 2>&1 | tee -a /app/logs/fastapi.log &
+
+sleep 1
+
+echo "[$(date)] Starting Streamlit frontend"
+export STREAMLIT_LOG_LEVEL=debug
+streamlit run /app/streamlit_app.py --server.port=8501 --server.address=0.0.0.0 2>&1 | tee -a /app/logs/streamlit.log
+EOF
+
+RUN chmod +x /app/start.sh
 
 ENTRYPOINT ["/app/start.sh"]
