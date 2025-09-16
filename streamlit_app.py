@@ -7,11 +7,16 @@ from components.ui_component import create_input_form, display_content_card, cre
 from src.education_ai_system.utils.validators import extract_weeks_from_scheme
 
 
-# Configure logging
+# Configure logging to output to both file and stdout
 logging.basicConfig(
     level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('/app/logs/streamlit.log'),
+        logging.StreamHandler(sys.stdout)
+    ]
 )
+
 logger = logging.getLogger(__name__)
 
 # Configuration
@@ -90,58 +95,60 @@ def main():
 
 
 def upload_document_tab():
-    try:
-        st.header("📄 Upload Curriculum Document")
-        
-        # Debug API URL
-        logger.debug(f"Using API URL: {API_BASE_URL}")
-        
-        country = st.selectbox(
-            "Select Country",
-            ["nigeria", "ghana", "kenya", "south_africa"],
-            index=0,
-            key="upload_country"
-        )
-        
-        uploaded_file = st.file_uploader(
-            "Choose a PDF file", 
-            type=['pdf'],
-            help="Upload the curriculum document you want to use for content generation"
-        )
-        
-        if uploaded_file:
-            logger.debug(f"File uploaded: {uploaded_file.name}, size: {uploaded_file.size}")
-            st.success(f"✅ **File Selected:** {uploaded_file.name}")
-            
-            col1, col2 = st.columns([2, 1])
-            
-            with col1:
-                if st.button("🚀 Process & Store in Pinecone", type="primary"):
-                    try:
-                        files = {"file": uploaded_file.getvalue()}
-                        endpoint = f"{API_BASE_URL}/api/embeddings/process_pdf"
-                        
-                        logger.debug(f"Sending request to: {endpoint}")
-                        response = requests.post(
-                            endpoint,
-                            files=files,
-                            data={"country": country},
-                            timeout=180
-                        )
-                        logger.debug(f"Response status: {response.status_code}")
-                        logger.debug(f"Response content: {response.text[:500]}")
-                        
-                        if response.status_code == 200:
-                            st.success("✅ PDF processed successfully!")
-                        else:
-                            st.error(f"Failed to process PDF: {response.text}")
-                    except Exception as e:
-                        logger.error(f"Upload error: {str(e)}", exc_info=True)
-                        st.error(f"Error during upload: {str(e)}")
-    except Exception as e:
-        logger.error(f"Tab error: {str(e)}", exc_info=True)
-        st.error(f"An error occurred: {str(e)}")
+    """Simple PDF upload and processing tab"""
+    st.header("📄 Upload Curriculum Document")
+    st.markdown("**Upload your curriculum PDF to store in Pinecone for content generation**")
 
+    # Debug info - add this
+    st.write("Debug Information:")
+    st.write(f"API URL: {API_BASE_URL}")
+
+    country = st.selectbox(
+        "Select Country",
+        ["nigeria", "ghana", "kenya", "south_africa"],
+        index=0,
+        key="upload_country"
+    )
+    
+    # File upload with debug info
+    uploaded_file = st.file_uploader(
+        "Choose a PDF file", 
+        type=['pdf'],
+        help="Upload the curriculum document you want to use for content generation"
+    )
+    
+    if uploaded_file:
+        # Add debug info when file is selected
+        st.write("File Debug Info:")
+        st.write(f"- File name: {uploaded_file.name}")
+        st.write(f"- File size: {uploaded_file.size} bytes")
+        st.write(f"- File type: {uploaded_file.type}")
+
+        st.success(f"✅ **File Selected:** {uploaded_file.name}")
+        
+        col1, col2 = st.columns([2, 1])
+        
+        with col1:
+            if st.button("🚀 Process & Store in Pinecone", type="primary"):
+                try:
+                    st.write("Starting file processing...")
+                    process_pdf_file(uploaded_file, country)
+                except Exception as e:
+                    st.error(f"Error during processing: {str(e)}")
+                    st.write(f"Exception type: {type(e).__name__}")
+        
+        with col2:
+            if st.button("🗑️ Clear Database"):
+                clear_pinecone_index()
+    
+    st.divider()
+    
+    # Database status
+    st.subheader("📊 Database Status")
+    if st.button("🔍 Check What's Stored"):
+        check_database_contents()
+
+        
 def process_pdf_file(uploaded_file, country):  # Add country parameter
     """Process single PDF file and store in Pinecone"""
     try:
