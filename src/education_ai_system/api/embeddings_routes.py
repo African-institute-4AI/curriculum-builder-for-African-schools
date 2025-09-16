@@ -2,6 +2,7 @@ from fastapi import APIRouter, Form, UploadFile, File, HTTPException
 from src.education_ai_system.services.pinecone_service import VectorizationService
 from  src.education_ai_system.tools.pinecone_exa_tools import PineconeRetrievalTool
 import os
+import tempfile
 
 router = APIRouter()
 
@@ -13,30 +14,65 @@ async def clear_index():
     retrieval_tool.clear_index_for_testing()
     return {"message": "Index cleared successfully"}
 
+# @router.post("/process_pdf")
+# async def process_pdf(file: UploadFile = File(...), country: str = Form(default="nigeria")):
+#     """
+#     This method will be used to prepocess your document by extracting text and tables from pdf document
+#     and stores it in the vector database 
+#     """
+#     try:
+#         #get the file name from the file that you upload
+#         file_path = f"temp_{file.filename}"
+#         #read the uploaded file
+#         with open(file_path, "wb") as f:
+#             #read the file in byte mode because it's not a text
+#             f.write(await file.read())
+        
+#         service = VectorizationService(country=country) #the pinecone object that's used to stored the extracted pdf document
+#         #use the vectorizationservice object to process the file
+#         result =service.process_and_store_pdf(file_path)
+
+
+
+        
+#         os.remove(file_path)
+        
+#        # ✅ Return the actual result
+#         if result.get("status") == "success":
+#             return {
+#                 "status": "success", 
+#                 "message": f"PDF processed and stored successfully. {result.get('chunks_stored', 0)} chunks stored.",
+#                 "chunks_stored": result.get("chunks_stored", 0)
+#             }
+#         else:
+#             return {"status": "error", "message": result.get("message", "Unknown error")}
+            
+#     except Exception as e:
+#         return {"status": "error", "message": str(e)}
+
 @router.post("/process_pdf")
 async def process_pdf(file: UploadFile = File(...), country: str = Form(default="nigeria")):
     """
     This method will be used to prepocess your document by extracting text and tables from pdf document
     and stores it in the vector database 
     """
+  
+    
     try:
-        #get the file name from the file that you upload
-        file_path = f"temp_{file.filename}"
-        #read the uploaded file
-        with open(file_path, "wb") as f:
-            #read the file in byte mode because it's not a text
-            f.write(await file.read())
+        # Create temp file in system temp directory
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
+            file_path = temp_file.name
+            # Write the uploaded file content to temp file
+            temp_file.write(await file.read())
         
-        service = VectorizationService(country=country) #the pinecone object that's used to stored the extracted pdf document
-        #use the vectorizationservice object to process the file
-        result =service.process_and_store_pdf(file_path)
-
-
-
+        # Process the file
+        service = VectorizationService(country=country)
+        result = service.process_and_store_pdf(file_path)
         
+        # Clean up temp file
         os.remove(file_path)
         
-       # ✅ Return the actual result
+        # Return the result
         if result.get("status") == "success":
             return {
                 "status": "success", 
