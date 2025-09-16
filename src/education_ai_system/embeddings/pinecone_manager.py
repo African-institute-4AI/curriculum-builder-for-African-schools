@@ -101,25 +101,67 @@ class PineconeManager:
     #         print(f"❌ Error upserting to Pinecone: {e}")
     #         raise e
 
+    # def upsert_content(self, chunks, metadata, country: str = "nigeria"):
+    #     if len(chunks) != len(metadata):
+    #         raise ValueError("Chunks and metadata lists must have the same length")
+            
+    #     embeddings = []
+        
+    #     # ✅ Process in smaller batches to reduce memory usage
+    #     batch_size = 5  # Process 5 chunks at a time
+        
+    #     for i in range(0, len(chunks), batch_size):
+    #         batch_chunks = chunks[i:i + batch_size]
+    #         batch_metadata = metadata[i:i + batch_size]
+            
+    #         for j, (chunk, meta) in enumerate(zip(batch_chunks, batch_metadata)):
+    #             # ✅ Use global tokenizer and model
+    #             # inputs = self.tokenizer(chunk, return_tensors="pt", padding=True, truncation=True, max_length=512)
+                
+    #             with torch.no_grad():
+    #                 # embedding = self.model(**inputs).last_hidden_state.mean(dim=1)
+
+    #                 embedding = self.model.encode([chunk])
+                
+    #             full_metadata = {
+    #                 "content": chunk,
+    #                 "country": country,
+    #                 "chunk_index": i + j,
+    #                 **meta
+    #             }
+                
+    #             embeddings.append({
+    #                 "id": f"chunk-{country}-{hash(chunk)}-{i + j}",
+    #                 "values": embedding[0].tolist(),
+    #                 "metadata": full_metadata
+    #             })
+            
+    #         # ✅ Clear cache after each batch
+    #         torch.cuda.empty_cache() if torch.cuda.is_available() else None
+        
+    #     # ✅ Add error handling and return confirmation
+    #     try:
+    #         self.index.upsert(embeddings)
+    #         print(f"✅ Successfully upserted {len(embeddings)} vectors to Pinecone")
+    #         return {"status": "success", "vectors_upserted": len(embeddings)}
+    #     except Exception as e:
+    #         print(f"❌ Error upserting to Pinecone: {e}")
+    #         raise e
+
     def upsert_content(self, chunks, metadata, country: str = "nigeria"):
         if len(chunks) != len(metadata):
             raise ValueError("Chunks and metadata lists must have the same length")
             
         embeddings = []
-        
-        # ✅ Process in smaller batches to reduce memory usage
-        batch_size = 5  # Process 5 chunks at a time
+        batch_size = 5
         
         for i in range(0, len(chunks), batch_size):
             batch_chunks = chunks[i:i + batch_size]
             batch_metadata = metadata[i:i + batch_size]
             
             for j, (chunk, meta) in enumerate(zip(batch_chunks, batch_metadata)):
-                # ✅ Use global tokenizer and model
-                inputs = self.tokenizer(chunk, return_tensors="pt", padding=True, truncation=True, max_length=512)
-                
-                with torch.no_grad():
-                    embedding = self.model(**inputs).last_hidden_state.mean(dim=1)
+                # ✅ sentence-transformers handles everything internally
+                embedding = self.model.encode([chunk])
                 
                 full_metadata = {
                     "content": chunk,
@@ -134,10 +176,11 @@ class PineconeManager:
                     "metadata": full_metadata
                 })
             
-            # ✅ Clear cache after each batch
-            torch.cuda.empty_cache() if torch.cuda.is_available() else None
+            # Clear cache after each batch
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
         
-        # ✅ Add error handling and return confirmation
+        # Upsert to Pinecone
         try:
             self.index.upsert(embeddings)
             print(f"✅ Successfully upserted {len(embeddings)} vectors to Pinecone")

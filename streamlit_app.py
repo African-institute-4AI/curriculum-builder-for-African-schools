@@ -8,7 +8,8 @@ from src.education_ai_system.utils.validators import extract_weeks_from_scheme
 # Configuration
 API_BASE_URL = (
     os.getenv("API_BASE_URL")
-    or "http://localhost:8001"
+    # or "http://localhost:8001"
+    or "http://127.0.0.1:8001"
     )
 
 def main():
