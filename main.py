@@ -26,11 +26,18 @@ app = FastAPI(
 
 # origins = ["http://localhost:8501"]
 # Update the CORS configuration section
+# origins = [
+#     "http://localhost:8501",
+#     "https://*.hf.space",  # Allow Hugging Face Spaces
+#     "https://*.streamlit.app",
+    
+# ]
+
 origins = [
     "http://localhost:8501",
-    "https://*.hf.space",  # Allow Hugging Face Spaces
+    "https://aljebra-ai-curriculum-builder-for-africa.hf.space",  # Your specific HF space
     "https://*.streamlit.app",
-    
+    "https://huggingface.co/spaces/aljebra/AI_curriculum_builder_for_Africa"  # Your HF space URL
 ]
 
 
