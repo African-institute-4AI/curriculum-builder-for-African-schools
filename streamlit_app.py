@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 import os
+import sys
 import logging
 from components.content_generators import ContentGenerator
 from components.ui_component import create_input_form, display_content_card, create_test_examples
@@ -148,7 +149,7 @@ def upload_document_tab():
     if st.button("🔍 Check What's Stored"):
         check_database_contents()
 
-        
+
 def process_pdf_file(uploaded_file, country):  # Add country parameter
     """Process single PDF file and store in Pinecone"""
     try:
